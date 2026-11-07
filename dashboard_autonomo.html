@@ -1,0 +1,2770 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Análise de Compras — Dashboard BI</title>
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <style>
+:root {
+    --primary: #1e40af;
+    --primary-2: #3b82f6;
+    --primary-light: #eff6ff;
+    --border: #dbeafe;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --soft: #f8fbff;
+    --shadow: 0 10px 24px rgba(2, 6, 23, .08);
+    --shadow-sm: 0 4px 12px rgba(2, 6, 23, .05);
+    --shadow-lg: 0 16px 36px rgba(2, 6, 23, .12);
+    --danger: #dc2626;
+    --warn: #f59e0b;
+    --ok: #16a34a;
+    --purple: #8b5cf6;
+    --cyan: #0284c7;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    scroll-behavior: auto;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #f0f6ff 0%, #eaf3ff 100%);
+    min-height: 100vh;
+    color: var(--ink);
+    padding: 24px 16px;
+}
+
+.container {
+    max-width: 1600px;
+    margin: 0 auto;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, .04);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    padding: 28px 32px;
+}
+
+/* ===== Cabeçalho ===== */
+.header-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.header-title-box {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 24px;
+    box-shadow: 0 8px 18px rgba(30, 64, 175, 0.28);
+}
+
+.header-title-box h1 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.2;
+}
+
+.header-subtitle {
+    font-size: 0.92rem;
+    color: var(--muted);
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+.header-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.badge-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid var(--border);
+}
+
+.badge-tag.success {
+    background: #ecfdf5;
+    color: var(--ok);
+    border-color: #a7f3d0;
+}
+
+/* ===== Alertas ===== */
+.alert {
+    display: none;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    animation: fadeIn 0.2s ease;
+}
+
+.alert.show {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.alert.error {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #7f1d1d;
+}
+
+.alert.warn {
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    color: #78350f;
+}
+
+.alert .close {
+    cursor: pointer;
+    font-weight: 800;
+    margin-left: 12px;
+}
+
+/* ===== Barra de Controle e Busca ===== */
+.controls-wrap {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.search-box {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--soft);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 10px 14px;
+}
+
+.search-input-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 280px;
+}
+
+.search-input-wrap i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+.search-input {
+    width: 100%;
+    border: 1px solid var(--border);
+    outline: 0;
+    border-radius: 12px;
+    padding: 10px 14px 10px 38px;
+    font-size: 0.92rem;
+    font-family: inherit;
+    background: #fff;
+    color: var(--ink);
+    transition: all 0.2s ease;
+}
+
+.search-input:focus {
+    border-color: var(--primary-2);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.file-input {
+    position: relative;
+}
+
+.file-input input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.file-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 0;
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 14px rgba(30, 64, 175, 0.22);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.file-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(30, 64, 175, 0.32);
+}
+
+.file-name {
+    font-size: 0.85rem;
+    color: #475569;
+    font-weight: 600;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn-secondary:hover {
+    background: #f1f5f9;
+    color: var(--primary);
+    border-color: #cbd5e1;
+}
+
+.clear-btn {
+    color: #dc2626;
+    border-color: #fecaca;
+    background: #fff;
+}
+
+.clear-btn:hover {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fca5a5;
+}
+
+/* ===== Filtros em Pílula ===== */
+.filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.pill {
+    position: relative;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 9px 14px;
+    cursor: pointer;
+    font-size: 0.86rem;
+    line-height: 1;
+    user-select: none;
+    min-width: 175px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 6px rgba(2, 6, 23, .02);
+}
+
+.pill:hover {
+    border-color: var(--primary-2);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, .08);
+}
+
+.pill strong {
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.pill .value {
+    color: #2563eb;
+    font-weight: 700;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pill .chev {
+    margin-left: auto;
+    color: #2563eb;
+    font-size: 0.78rem;
+    transition: transform 0.2s ease;
+}
+
+.pill.open .chev {
+    transform: rotate(180deg);
+}
+
+.menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 50;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-lg);
+    min-width: 280px;
+    max-width: 360px;
+    max-height: 340px;
+    overflow: hidden;
+    padding: 10px;
+    display: none;
+    animation: dropDown 0.15s ease;
+}
+
+.pill.open .menu {
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-search {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 0.86rem;
+    margin-bottom: 8px;
+    outline: none;
+    font-family: inherit;
+}
+
+.menu-search:focus {
+    border-color: var(--primary-2);
+}
+
+.menu-actions {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0 8px 0;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 6px;
+}
+
+.menu-actions button {
+    flex: 1;
+    border: 1px solid var(--border);
+    background: #f8fafc;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.menu-actions button:hover {
+    background: #e2e8f0;
+}
+
+.menu-actions button.apply {
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    color: #fff;
+    border: 0;
+}
+
+.menu-actions button.apply:hover {
+    box-shadow: 0 4px 10px rgba(30, 64, 175, 0.25);
+}
+
+.menu .list {
+    overflow-y: auto;
+    max-height: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    color: #1e293b;
+    transition: background 0.15s ease;
+}
+
+.opt:hover {
+    background: #eff6ff;
+}
+
+.opt input[type="checkbox"] {
+    accent-color: #2563eb;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* ===== Seções e Cards de KPIs ===== */
+.section {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px;
+    margin-top: 18px;
+}
+
+.kpi-groups {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+@media (max-width: 1200px) {
+    .kpi-groups {
+        grid-template-columns: 1fr;
+    }
+}
+
+.kpi-group {
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 16px 16px 10px 16px;
+    position: relative;
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(2, 6, 23, .04);
+}
+
+.kpi-group::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 4px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+}
+
+.kpi-group .title {
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 12px;
+    font-size: 1.02rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.kpi-group .title i {
+    color: var(--primary);
+}
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 680px) {
+    .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.kpi {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kpi:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(2, 6, 23, .06);
+}
+
+.kpi::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+}
+
+.kpi .lab {
+    font-size: 0.76rem;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.kpi .val {
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.2;
+}
+
+.kpi .sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-weight: 600;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.kpi .sub strong {
+    color: var(--ink);
+}
+
+/* ===== Seção de Gráficos ===== */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title i {
+    color: var(--primary);
+}
+
+.chart-toggle-group {
+    display: flex;
+    background: #f1f5f9;
+    border-radius: 12px;
+    padding: 3px;
+    gap: 2px;
+}
+
+.chart-toggle-btn {
+    border: 0;
+    background: transparent;
+    padding: 6px 12px;
+    border-radius: 9px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.chart-toggle-btn.active {
+    background: #fff;
+    color: var(--primary);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.charts-grid-main {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.charts-grid-side {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+@media (max-width: 1080px) {
+    .charts-grid-side {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chart-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+    position: relative;
+    box-shadow: 0 6px 18px rgba(2, 6, 23, .03);
+}
+
+.chart-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.chart-card-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-card-badge {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--primary-light);
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.chart-box-main {
+    height: 1150px;
+    position: relative;
+}
+
+.chart-box-periodo {
+    height: 390px;
+    position: relative;
+}
+
+.chart-box-side {
+    height: 520px;
+    position: relative;
+}
+
+.chart-box-distrib {
+    height: 380px;
+    position: relative;
+}
+
+/* ===== Tabela de Dados sob Demanda ===== */
+.table-section {
+    padding: 0;
+    overflow: hidden;
+}
+
+.table-toggle-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.table-toggle-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: var(--ink);
+}
+
+.table-toggle-title i {
+    color: var(--primary);
+    font-size: 1.15rem;
+}
+
+.bar-filter-chip {
+    background: #e0e7ff;
+    color: #3730a3;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #c7d2fe;
+}
+
+.table-toggle-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.table-btn {
+    border: 0;
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    color: #fff;
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.table-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+}
+
+.clear-bar-btn {
+    border: 1px solid #fca5a5;
+    background: #fef2f2;
+    color: #991b1b;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.clear-bar-btn:hover {
+    background: #fee2e2;
+}
+
+.table-placeholder {
+    padding: 44px 20px;
+    text-align: center;
+    background: #fff;
+}
+
+.placeholder-icon {
+    font-size: 46px;
+    color: #94a3b8;
+    margin-bottom: 12px;
+}
+
+.table-placeholder h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #334155;
+}
+
+.table-placeholder p {
+    margin: 0 auto;
+    max-width: 650px;
+    font-size: 0.95rem;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.grid-wrap {
+    padding: 0;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    text-align: left;
+}
+
+th,
+td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    position: sticky;
+    top: 0;
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 800;
+    user-select: none;
+    white-space: nowrap;
+    border-top: 1px solid var(--border);
+}
+
+th.sortable {
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+th.sortable:hover {
+    background: #eff6ff;
+    color: var(--primary);
+}
+
+th .sort {
+    margin-left: 6px;
+    color: #94a3b8;
+    font-size: 0.82rem;
+}
+
+th.active {
+    color: var(--primary);
+    background: #eff6ff;
+}
+
+th.active .sort {
+    color: var(--primary);
+}
+
+tr:hover td {
+    background: #f8fbff;
+}
+
+td.cell-nota {
+    font-family: monospace;
+    font-weight: 700;
+    color: #2563eb;
+}
+
+td.cell-fornecedor {
+    font-weight: 700;
+    color: #1e293b;
+    cursor: pointer;
+}
+
+td.cell-fornecedor:hover {
+    color: var(--primary-2);
+    text-decoration: underline;
+}
+
+td.cell-cnpj {
+    font-family: monospace;
+    color: #64748b;
+    font-size: 0.86rem;
+}
+
+td.cell-valor {
+    font-weight: 800;
+    color: #0f172a;
+    text-align: right;
+}
+
+td.cell-share {
+    text-align: right;
+    font-weight: 700;
+    color: #6366f1;
+}
+
+/* Linha de Totais no Rodapé da Tabela */
+tfoot tr td {
+    background: #f1f5f9;
+    font-weight: 800;
+    color: #0f172a;
+    border-top: 2px solid #cbd5e1;
+    font-size: 0.95rem;
+}
+
+/* ===== Paginação ===== */
+.pagination-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: #f8fafc;
+    border-top: 1px solid var(--border);
+    font-size: 0.88rem;
+    color: #475569;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pagination-btn {
+    border: 1px solid var(--border);
+    background: #fff;
+    color: #334155;
+    padding: 7px 14px;
+    border-radius: 9px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #eff6ff;
+    color: var(--primary);
+    border-color: #bfdbfe;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-weight: 600;
+}
+
+.page-size-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.page-size-selector select {
+    border: 1px solid var(--border);
+    background: #fff;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    outline: none;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+/* ===== Animações ===== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dropDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+</style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- CABEÇALHO -->
+        <header class="header-wrap">
+            <div class="header-title-box">
+                <div class="header-icon">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </div>
+                <div>
+                    <h1>Análise de Compras do Período</h1>
+                    <div class="header-subtitle">Dashboard BI Executivo — Aquisições, Fornecedores e Volume Financeiro</div>
+                </div>
+            </div>
+            <div class="header-meta">
+                <span id="badgeTotalGeral" class="badge-tag">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Aguardando Arquivo
+                </span>
+                <span id="badgeTop30" class="badge-tag">
+                    <i class="fa-solid fa-trophy"></i> Top 30 Fornecedores
+                </span>
+            </div>
+        </header>
+
+        <!-- MENSAGENS E ALERTAS -->
+        <div id="alertError" class="alert error">
+            <span class="msg"></span>
+            <span class="close" onclick="this.parentElement.classList.remove('show')">✕</span>
+        </div>
+        <div id="alertWarn" class="alert warn">
+            <span class="msg"></span>
+            <span class="close" onclick="this.parentElement.classList.remove('show')">✕</span>
+        </div>
+
+        <!-- BARRA DE CONTROLE, BUSCA E ARQUIVO -->
+        <div class="controls-wrap">
+            <div class="search-box">
+                <div class="search-input-wrap">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input id="q" class="search-input" placeholder="Buscar por fornecedor, CNPJ ou número da nota..." />
+                </div>
+                <div class="file-input">
+                    <button class="file-btn" type="button">
+                        <i class="fa-solid fa-file-excel"></i> Selecionar arquivo
+                    </button>
+                    <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" />
+                </div>
+                <span id="fileName" class="file-name" title="Nenhum arquivo selecionado">Nenhum arquivo selecionado</span>
+            </div>
+
+            <div class="action-buttons">
+                <button id="exportCsvBtn" class="btn-secondary" title="Exportar dados filtrados para CSV">
+                    <i class="fa-solid fa-file-csv"></i> Exportar CSV
+                </button>
+                <button id="clearAll" class="btn-secondary clear-btn">
+                    <i class="fa-solid fa-eraser"></i> Limpar Filtros
+                </button>
+            </div>
+        </div>
+
+        <!-- BARRA DE FILTROS DINÂMICOS (PÍLULAS) -->
+        <div class="filters" id="filters"></div>
+
+        <!-- CARDS DE INDICADORES / KPIS -->
+        <div class="section">
+            <div id="kpiGroups" class="kpi-groups"></div>
+        </div>
+
+        <!-- GRÁFICO DE COMPRAS POR PERÍODO (BARRAS VERDES COM LINHA DE MÉDIA) -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fa-solid fa-calendar-days" style="color: #10b981;"></i>
+                    <span>Evolução de Compras por Período</span>
+                </div>
+                <div class="chart-toggle-group">
+                    <button id="btnPeriodoEntrada" class="chart-toggle-btn active" onclick="setPeriodoDateType('entrada')">
+                        <i class="fa-solid fa-truck-ramp-box"></i> Data de Entrada
+                    </button>
+                    <button id="btnPeriodoEmissao" class="chart-toggle-btn" onclick="setPeriodoDateType('emissao')">
+                        <i class="fa-solid fa-file-invoice"></i> Data de Emissão
+                    </button>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <span class="chart-card-title">
+                        <i class="fa-solid fa-chart-column" style="color: #10b981;"></i>
+                        <span id="periodoChartTitle">Compras por Período de Entrada (Mês)</span>
+                    </span>
+                    <span id="periodoChartMediaBadge" class="chart-card-badge" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;">
+                        Média Mensal: R$ 0,00
+                    </span>
+                </div>
+                <div class="chart-box-periodo">
+                    <canvas id="periodoChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRÁFICO PRINCIPAL EM DESTAQUE: TOP 30 FORNECEDORES (BARRAS LADO A LADO) -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fa-solid fa-ranking-star"></i>
+                    <span>Top 30 Maiores Fornecedores por Valor de Compras</span>
+                </div>
+                <div class="chart-toggle-group">
+                    <button id="btnViewValor" class="chart-toggle-btn active" onclick="setMainChartMetric('valor')">
+                        <i class="fa-solid fa-brazilian-real-sign"></i> Valor Total (R$)
+                    </button>
+                    <button id="btnViewQtd" class="chart-toggle-btn" onclick="setMainChartMetric('qtd')">
+                        <i class="fa-solid fa-file-invoice"></i> Quantidade de Notas
+                    </button>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <span class="chart-card-title">
+                        <i class="fa-solid fa-chart-bar" style="color: var(--primary);"></i>
+                        <span id="mainChartTitleText">Ranking dos 30 Maiores Fornecedores (Gráfico de Barras Horizontais)</span>
+                    </span>
+                    <span id="mainChartTotalBadge" class="chart-card-badge">Total Filtrado: R$ 0,00</span>
+                </div>
+                <div class="chart-box-main">
+                    <canvas id="topFornecedoresChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRÁFICOS COMPARATIVOS LADO A LADO (2 COLUNAS) -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fa-solid fa-chart-column"></i>
+                    <span>Análises Detalhadas Lado a Lado</span>
+                </div>
+            </div>
+
+            <div class="charts-grid-side">
+                <!-- Coluna 1: Top Fornecedores por Volume de Notas -->
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <span class="chart-card-title">
+                            <i class="fa-solid fa-receipt" style="color: var(--cyan);"></i>
+                            Top Fornecedores por Frequência (Qtd. de Notas)
+                        </span>
+                        <span class="chart-card-badge">Volume</span>
+                    </div>
+                    <div class="chart-box-side">
+                        <canvas id="freqFornecedoresChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Coluna 2: Distribuição por Faixas de Valor de Nota -->
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <span class="chart-card-title">
+                            <i class="fa-solid fa-layer-group" style="color: var(--purple);"></i>
+                            Distribuição das Compras por Faixa de Valor
+                        </span>
+                        <span class="chart-card-badge">Ticket</span>
+                    </div>
+                    <div class="chart-box-side">
+                        <canvas id="faixasValorChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABELA DETALHADA COM ALTA PERFORMANCE -->
+        <div class="section table-section">
+            <div id="tableToggleBar" class="table-toggle-bar">
+                <div class="table-toggle-title">
+                    <i class="fa-solid fa-table-list"></i>
+                    <span>Detalhamento das Notas Fiscais de Compra</span>
+                    <span id="periodBarFilterChip" class="bar-filter-chip" style="display: none; background: #ecfdf5; color: #065f46; border-color: #a7f3d0;"></span>
+                    <span id="barFilterChip" class="bar-filter-chip" style="display: none;"></span>
+                </div>
+                <div class="table-toggle-actions">
+                    <button id="clearPeriodBarFilterBtn" class="clear-bar-btn" style="display: none; background: #fef2f2; color: #991b1b; border-color: #fca5a5;">
+                        <i class="fa-solid fa-xmark"></i> Limpar Período
+                    </button>
+                    <button id="clearBarFilterBtn" class="clear-bar-btn" style="display: none;">
+                        <i class="fa-solid fa-xmark"></i> Remover Filtro do Gráfico
+                    </button>
+                    <button id="toggleTableBtn" class="table-btn">
+                        <i class="fa-solid fa-folder-open"></i> Carregar Tabela Completa
+                    </button>
+                </div>
+            </div>
+
+            <div id="tablePlaceholder" class="table-placeholder">
+                <i class="fa-solid fa-cloud-arrow-up placeholder-icon"></i>
+                <h3 id="tablePlaceholderTitle">Aguardando Base de Dados</h3>
+                <p id="tablePlaceholderText">Selecione uma planilha de compras (arquivo <strong>.xls</strong>, <strong>.xlsx</strong> ou <strong>.csv</strong>) clicando no botão <strong>Selecionar arquivo</strong> acima para iniciar a análise.</p>
+            </div>
+
+            <div id="gridWrap" class="grid-wrap" style="display: none;">
+                <table id="grid">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-key="nota" data-type="num" style="width: 140px;">
+                                Número da Nota (Col A) <i class="fa-solid fa-sort sort"></i>
+                            </th>
+                            <th class="sortable" data-key="fornecedor" data-type="text">
+                                Nome do Fornecedor (Col C) <i class="fa-solid fa-sort sort"></i>
+                            </th>
+                            <th class="sortable" data-key="cnpj" data-type="text" style="width: 200px;">
+                                CNPJ (Col D) <i class="fa-solid fa-sort sort"></i>
+                            </th>
+                            <th class="sortable" data-key="valor" data-type="num" style="width: 180px; text-align: right;">
+                                Valor (Col F) <i class="fa-solid fa-sort sort"></i>
+                            </th>
+                            <th class="sortable" data-key="share" data-type="num" style="width: 120px; text-align: right;">
+                                % Total <i class="fa-solid fa-sort sort"></i>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <td id="tfootTotalNotas">Total: 0 notas</td>
+                            <td id="tfootTotalFornecedores">0 fornecedores distintos</td>
+                            <td>—</td>
+                            <td id="tfootTotalValor" style="text-align: right;">R$ 0,00</td>
+                            <td id="tfootTotalShare" style="text-align: right;">100,0%</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div id="tablePagination" class="pagination-wrap"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BIBLIOTECAS EXTERNAS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+    <!-- MOTOR DE DADOS, FILTROS E GRÁFICOS -->
+    <script>
+/* ===== Registro do Plugin de Rótulos do Chart.js ===== */
+if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
+    Chart.register(ChartDataLabels);
+}
+
+/* ===== Helpers UI & Formatação ===== */
+function showError(msg) {
+    const el = document.getElementById('alertError');
+    if (!el) return;
+    el.querySelector('.msg').textContent = msg;
+    el.classList.add('show');
+}
+
+function showWarn(msg) {
+    const el = document.getElementById('alertWarn');
+    if (!el) return;
+    el.querySelector('.msg').textContent = msg;
+    el.classList.add('show');
+}
+
+const $ = s => document.querySelector(s);
+const BRL = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(+v || 0);
+const NUM = v => new Intl.NumberFormat('pt-BR').format(+v || 0);
+const PCT = v => (Number.isFinite(v) ? v.toFixed(1).replace('.', ',') : '0,0') + '%';
+
+function formatCompactBRL(v) {
+    if (v >= 1000000) {
+        return 'R$ ' + (v / 1000000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' M';
+    }
+    if (v >= 1000) {
+        return 'R$ ' + (v / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' K';
+    }
+    return BRL(v);
+}
+
+function withStableScroll(fn) {
+    const x = window.pageXOffset || 0;
+    const y = window.pageYOffset || 0;
+    fn();
+    requestAnimationFrame(() => {
+        window.scrollTo(x, y);
+        requestAnimationFrame(() => { window.scrollTo(x, y); });
+    });
+}
+
+function toNumberBR(x) {
+    if (x === null || x === undefined || x === '') return 0;
+    if (typeof x === 'number') return isNaN(x) ? 0 : x;
+    const s = String(x).trim();
+    const clean = s.replace(/[R$\s]/g, '').replace(/\./g, '').replace(/,/g, '.');
+    const n = parseFloat(clean);
+    return isNaN(n) ? 0 : n;
+}
+
+function parseDateExcel(v) {
+    if (v === null || v === undefined || v === '') return null;
+    if (typeof v === 'number') {
+        const base = new Date(Date.UTC(1899, 11, 30));
+        return new Date(base.getTime() + v * 86400000);
+    }
+    if (typeof v === 'string') {
+        const s = v.trim();
+        const parts = s.split(/[\/\-]/);
+        if (parts.length === 3) {
+            if (parts[2].length === 4) {
+                return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+            }
+            if (parts[0].length === 4) {
+                return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            }
+        }
+        const d = new Date(s);
+        return isNaN(+d) ? null : d;
+    }
+    return null;
+}
+
+const NOMES_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+function formatMesAno(dateObj) {
+    if (!dateObj || isNaN(+dateObj)) return 'Não informado';
+    return `${NOMES_MESES[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+}
+
+function sortMesAno(arr) {
+    const nomes = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    return [...arr].sort((a, b) => {
+        if (!a || a === 'Não informado') return 1;
+        if (!b || b === 'Não informado') return -1;
+        const pa = String(a).toLowerCase().split(' ');
+        const pb = String(b).toLowerCase().split(' ');
+        const ya = parseInt(pa[1], 10) || 0;
+        const yb = parseInt(pb[1], 10) || 0;
+        if (ya !== yb) return ya - yb;
+        const ma = nomes.indexOf(pa[0]);
+        const mb = nomes.indexOf(pb[0]);
+        return ma - mb;
+    });
+}
+
+function formatCnpj(v) {
+    if (!v) return '—';
+    const s = String(v).trim();
+    if (s.includes('/') || s.includes('.')) return s;
+    const clean = s.replace(/\D/g, '');
+    if (clean.length === 14) {
+        return clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+    }
+    return s;
+}
+
+function getFaixaValor(val) {
+    const v = +val || 0;
+    if (v <= 500) return 'Até R$ 500';
+    if (v <= 2000) return 'R$ 500 a R$ 2.000';
+    if (v <= 10000) return 'R$ 2.000 a R$ 10.000';
+    if (v <= 50000) return 'R$ 10.000 a R$ 50.000';
+    return 'Acima de R$ 50.000';
+}
+
+const FAIXAS_VALOR_ORDEM = [
+    'Até R$ 500',
+    'R$ 500 a R$ 2.000',
+    'R$ 2.000 a R$ 10.000',
+    'R$ 10.000 a R$ 50.000',
+    'Acima de R$ 50.000'
+];
+
+/* ===== Estado da Aplicação ===== */
+let allData = [];
+let filtered = [];
+let charts = {
+    periodo: null,
+    topFornecedores: null,
+    freqFornecedores: null,
+    faixasValor: null
+};
+
+let periodoDateType = 'entrada'; // 'entrada' ou 'emissao'
+let periodBarFilter = null;      // 'Janeiro 2026', etc.
+let mainMetric = 'valor';        // 'valor' ou 'qtd'
+let barFilter = null;            // { label: string }
+let tableLoaded = false;
+let currentPage = 1;
+let pageSize = 50;
+
+const state = {
+    search: '',
+    Periodo: [],
+    Fornecedor: [],
+    CNPJ: [],
+    FaixaValor: [],
+    Nota: []
+};
+
+const sortState = {
+    key: 'valor',
+    type: 'num',
+    dir: 'desc'
+};
+
+/* ===== Componente de Pílula (MultiPill) ===== */
+class MultiPill {
+    constructor({ label, getter, setter }) {
+        this.label = label;
+        this.getter = getter;
+        this.setter = setter;
+        this.options = [];
+        this.el = document.createElement('div');
+        this.el.className = 'pill';
+        this.el.tabIndex = 0;
+        this.el.innerHTML = `<strong>${label}:</strong> <span class="value">Todos</span> <i class="fa-solid fa-chevron-down chev"></i><div class="menu"></div>`;
+        this.menu = this.el.querySelector('.menu');
+        this.valueEl = this.el.querySelector('.value');
+        this.searchInput = null;
+
+        this.el.addEventListener('click', e => {
+            if (!e.target.closest('.menu')) {
+                const x = window.pageXOffset, y = window.pageYOffset;
+                this.el.classList.toggle('open');
+                if (this.searchInput) this.searchInput.focus();
+                window.scrollTo(x, y);
+            }
+        });
+
+        document.addEventListener('click', e => {
+            if (!this.el.contains(e.target)) {
+                const x = window.pageXOffset, y = window.pageYOffset;
+                this.el.classList.remove('open');
+                window.scrollTo(x, y);
+            }
+        });
+    }
+
+    setOptions(opts, { keepOrder = false } = {}) {
+        const unique = [...new Set(opts.filter(Boolean))];
+        this.options = keepOrder ? unique : unique.sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
+        this.render();
+    }
+
+    render() {
+        const sel = new Set(this.getter());
+        this.menu.innerHTML = '';
+
+        const s = document.createElement('input');
+        s.placeholder = `Pesquisar ${this.label.toLowerCase()}...`;
+        s.className = 'menu-search';
+        this.menu.append(s);
+        this.searchInput = s;
+
+        const acts = document.createElement('div');
+        acts.className = 'menu-actions';
+        const limpar = document.createElement('button');
+        limpar.textContent = 'Limpar';
+        const aplicar = document.createElement('button');
+        aplicar.textContent = 'Aplicar';
+        aplicar.className = 'apply';
+        acts.append(limpar, aplicar);
+        this.menu.append(acts);
+
+        const list = document.createElement('div');
+        list.className = 'list';
+        this.menu.append(list);
+
+        for (const o of this.options) {
+            const row = document.createElement('label');
+            row.className = 'opt';
+            row.dataset.text = String(o).toLowerCase();
+            const chk = document.createElement('input');
+            chk.type = 'checkbox';
+            chk.value = o;
+            chk.checked = sel.has(o);
+            row.append(chk, document.createElement('span'));
+            row.lastChild.textContent = o;
+            list.append(row);
+        }
+
+        s.oninput = () => {
+            const q = s.value.toLowerCase();
+            list.querySelectorAll('.opt').forEach(el => {
+                el.style.display = el.dataset.text.includes(q) ? '' : 'none';
+            });
+        };
+
+        limpar.onclick = () => withStableScroll(() => {
+            this.setter([]);
+            this.sync();
+            applyFilters();
+        });
+
+        aplicar.onclick = () => withStableScroll(() => {
+            const vals = [...list.querySelectorAll('input:checked')].map(i => i.value);
+            this.setter(vals);
+            this.el.classList.remove('open');
+            this.sync();
+            applyFilters();
+        });
+
+        list.addEventListener('click', (ev) => {
+            const input = ev.target.closest('input[type="checkbox"]');
+            if (!input) return;
+            const temp = new Set(this.getter());
+            if (input.checked) temp.add(input.value); else temp.delete(input.value);
+            const arr = [...temp];
+            this.valueEl.textContent = !arr.length ? 'Todos' : (arr.length <= 2 ? arr.join(', ') : `${arr[0]}, ${arr[1]} (+${arr.length - 2})`);
+        });
+
+        this.sync();
+    }
+
+    sync() {
+        const v = this.getter();
+        this.valueEl.textContent = !v || v.length === 0 ? 'Todos' : (v.length <= 2 ? v.join(', ') : `${v[0]}, ${v[1]} (+${v.length - 2})`);
+    }
+}
+
+const pillInstances = {
+    Periodo: new MultiPill({ label: 'Período', getter: () => state.Periodo, setter: v => state.Periodo = v }),
+    Fornecedor: new MultiPill({ label: 'Fornecedor', getter: () => state.Fornecedor, setter: v => state.Fornecedor = v }),
+    CNPJ: new MultiPill({ label: 'CNPJ', getter: () => state.CNPJ, setter: v => state.CNPJ = v }),
+    FaixaValor: new MultiPill({ label: 'Faixa de Valor', getter: () => state.FaixaValor, setter: v => state.FaixaValor = v }),
+    Nota: new MultiPill({ label: 'Número da Nota', getter: () => state.Nota, setter: v => state.Nota = v })
+};
+
+(function mountPills() {
+    const holder = document.getElementById('filters');
+    if (!holder) return;
+    ['Periodo', 'Fornecedor', 'CNPJ', 'FaixaValor', 'Nota'].forEach(k => {
+        holder.appendChild(pillInstances[k].el);
+    });
+})();
+
+/* ===== Upload e Leitura de Arquivo ===== */
+const fileInput = document.getElementById('fileInput');
+const fileNameEl = document.getElementById('fileName');
+
+if (fileInput) {
+    fileInput.addEventListener('change', ev => {
+        const f = ev.target.files?.[0];
+        if (f) {
+            fileNameEl.textContent = f.name;
+            readFile(f);
+        }
+    });
+}
+
+async function readFile(file) {
+    try {
+        if (!window.XLSX) {
+            showError('Biblioteca XLSX não carregada. Verifique sua conexão com a internet.');
+            return;
+        }
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+            showWarn('Formato não suportado. Por favor utilize um arquivo .xlsx, .xls ou .csv');
+            return;
+        }
+
+        let wb;
+        if (ext === 'csv') {
+            const text = await file.text();
+            wb = XLSX.read(text, { type: 'string' });
+        } else {
+            const buf = await file.arrayBuffer();
+            wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+        }
+        processWorkbook(wb);
+    } catch (err) {
+        console.error(err);
+        showError('Falha ao ler o arquivo. Verifique se o arquivo não está corrompido ou protegido por senha.');
+    }
+}
+
+function processWorkbook(wb) {
+    const name = wb.SheetNames.find(n => {
+        const ws = wb.Sheets[n];
+        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+        return (range.e.r - range.s.r) >= 1;
+    }) || wb.SheetNames[0];
+
+    const ws = wb.Sheets[name];
+    if (!ws) {
+        showError('A planilha selecionada está vazia.');
+        return;
+    }
+
+    const mat = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false });
+    if (!mat || !mat.length) {
+        showError('Nenhuma linha de dados encontrada.');
+        return;
+    }
+
+    let headerIdx = detectHeaderRow(mat);
+    const headers = (mat[headerIdx] || []).map(x => String(x || '').trim());
+    const dataRows = mat.slice(headerIdx + 1);
+
+    parseRows(headers, dataRows);
+}
+
+function detectHeaderRow(mat) {
+    let best = 0, bestIdx = 0;
+    const maxCheck = Math.min(10, mat.length);
+    for (let i = 0; i < maxCheck; i++) {
+        const row = mat[i] || [];
+        const filled = row.filter(c => c !== undefined && c !== null && String(c).trim() !== '').length;
+        const hasText = row.some(c => typeof c === 'string' && c.trim().length > 0);
+        if (hasText && filled > best) {
+            best = filled;
+            bestIdx = i;
+        }
+    }
+    return bestIdx;
+}
+
+function findCol(headers, aliases) {
+    const lc = headers.map(h => String(h || '').toLowerCase().trim());
+    for (const a of aliases) {
+        const idx = lc.indexOf(a.toLowerCase());
+        if (idx >= 0) return idx;
+    }
+    return -1;
+}
+
+function parseRows(headers, data) {
+    const colNota = (() => {
+        const c = findCol(headers, ['Nota', 'Número da nota', 'Numero da Nota', 'NF', 'Num Nota', 'Documento']);
+        return c >= 0 ? c : 0;
+    })();
+
+    const colFornecedor = (() => {
+        const c = findCol(headers, ['Fornecedor', 'Nome do Fornecedor', 'Razão Social', 'Razao Social', 'Nome']);
+        return c >= 0 ? c : 2;
+    })();
+
+    const colCnpj = (() => {
+        const c = findCol(headers, ['Documento Fornecedor', 'CNPJ', 'CPF/CNPJ', 'CNPJ Fornecedor']);
+        return c >= 0 ? c : 3;
+    })();
+
+    const colEmissao = (() => {
+        const c = findCol(headers, ['Emissão', 'Emissao', 'Data Emissão', 'Data Emissao', 'Dt Emissao', 'EMISSÃO']);
+        return c >= 0 ? c : 4;
+    })();
+
+    const colValor = (() => {
+        const c = findCol(headers, ['Valor Nota', 'Valor', 'Valor Total', 'Total']);
+        return c >= 0 ? c : 5;
+    })();
+
+    const colEntrada = (() => {
+        const c = findCol(headers, ['Entrada', 'Data Entrada', 'Data de Entrada', 'Dt Entrada', 'ENTRADA']);
+        return c >= 0 ? c : 6;
+    })();
+
+    allData = data.map((r, i) => {
+        const rawNota = r[colNota];
+        let notaStr = '';
+        if (typeof rawNota === 'number' && Number.isInteger(rawNota)) {
+            notaStr = String(rawNota);
+        } else {
+            notaStr = String(rawNota ?? '').trim();
+        }
+
+        const fornecedor = String(r[colFornecedor] ?? '').trim() || 'Fornecedor não identificado';
+        const cnpj = String(r[colCnpj] ?? '').trim() || '—';
+        const valor = toNumberBR(r[colValor]);
+
+        const rawEnt = r[colEntrada];
+        const dateEnt = parseDateExcel(rawEnt);
+        const mesEnt = formatMesAno(dateEnt);
+
+        const rawEmis = r[colEmissao];
+        const dateEmis = parseDateExcel(rawEmis);
+        const mesEmis = formatMesAno(dateEmis);
+
+        return {
+            id: i + 1,
+            nota: notaStr || '—',
+            fornecedor: fornecedor,
+            cnpj: cnpj,
+            valor: valor,
+            faixaValor: getFaixaValor(valor),
+            entrada: dateEnt ? dateEnt.toLocaleDateString('pt-BR') : '',
+            emissao: dateEmis ? dateEmis.toLocaleDateString('pt-BR') : '',
+            mesEntrada: mesEnt,
+            mesEmissao: mesEmis,
+            periodo: mesEnt !== 'Não informado' ? mesEnt : mesEmis
+        };
+    }).filter(r => r.fornecedor !== 'Fornecedor não identificado' || r.valor > 0);
+
+    const badge = document.getElementById('badgeTotalGeral');
+    if (badge) {
+        badge.className = 'badge-tag success';
+        badge.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${NUM(allData.length)} Notas Carregadas`;
+    }
+
+    const phTitle = document.getElementById('tablePlaceholderTitle');
+    if (phTitle) phTitle.textContent = 'Tabela Otimizada para Máxima Performance';
+    const phText = document.getElementById('tablePlaceholderText');
+    if (phText) phText.innerHTML = 'Clique em <strong>qualquer barra dos gráficos acima</strong> para filtrar apenas as notas correspondentes àquele fornecedor/mês, ou clique no botão <strong>Carregar Tabela Completa</strong> para visualizar todos os registros.';
+
+    initPillsAndApply();
+}
+
+function initPillsAndApply() {
+    // Configura opções do filtro Período ordenadas cronologicamente
+    const meses = allData.map(r => (periodoDateType === 'emissao' ? r.mesEmissao : r.mesEntrada) || r.periodo).filter(Boolean);
+    const sortedMeses = sortMesAno([...new Set(meses)]);
+    pillInstances.Periodo.setOptions(sortedMeses, { keepOrder: true });
+
+    pillInstances.Fornecedor.setOptions(allData.map(x => x.fornecedor));
+    pillInstances.CNPJ.setOptions(allData.map(x => x.cnpj));
+    pillInstances.FaixaValor.setOptions(FAIXAS_VALOR_ORDEM, { keepOrder: true });
+    pillInstances.Nota.setOptions(allData.map(x => x.nota));
+
+    applyFilters();
+}
+
+/* ===== Alternar Tipo de Data do Período (Entrada / Emissão) ===== */
+function setPeriodoDateType(type) {
+    periodoDateType = type;
+    const btnEnt = document.getElementById('btnPeriodoEntrada');
+    const btnEmis = document.getElementById('btnPeriodoEmissao');
+    const title = document.getElementById('periodoChartTitle');
+
+    if (type === 'emissao') {
+        btnEmis?.classList.add('active');
+        btnEnt?.classList.remove('active');
+        if (title) title.textContent = 'Compras por Período de Emissão (Mês)';
+    } else {
+        btnEnt?.classList.add('active');
+        btnEmis?.classList.remove('active');
+        if (title) title.textContent = 'Compras por Período de Entrada (Mês)';
+    }
+
+    const meses = allData.map(r => (type === 'emissao' ? r.mesEmissao : r.mesEntrada) || r.periodo).filter(Boolean);
+    const sortedMeses = sortMesAno([...new Set(meses)]);
+    pillInstances.Periodo.setOptions(sortedMeses, { keepOrder: true });
+
+    withStableScroll(() => applyFilters());
+}
+
+/* ===== Busca Rápida e Limpeza ===== */
+const qInput = document.getElementById('q');
+if (qInput) {
+    qInput.addEventListener('input', e => {
+        state.search = e.target.value.toLowerCase().trim();
+        withStableScroll(() => applyFilters());
+    });
+}
+
+const clearAllBtn = document.getElementById('clearAll');
+if (clearAllBtn) {
+    clearAllBtn.addEventListener('click', () => {
+        withStableScroll(() => {
+            state.search = '';
+            if (qInput) qInput.value = '';
+            state.Periodo = [];
+            state.Fornecedor = [];
+            state.CNPJ = [];
+            state.FaixaValor = [];
+            state.Nota = [];
+            barFilter = null;
+            periodBarFilter = null;
+
+            Object.values(pillInstances).forEach(p => {
+                p.setter([]);
+                p.render();
+                p.sync();
+            });
+
+            updateBarFilterUI();
+            updatePeriodBarFilterUI();
+            applyFilters();
+        });
+    });
+}
+
+/* ===== Filtragem dos Dados ===== */
+function applyFilters() {
+    filtered = allData.filter(r => {
+        const rowMes = (periodoDateType === 'emissao' ? r.mesEmissao : r.mesEntrada) || r.periodo;
+
+        const periodoPillOk = state.Periodo.length === 0 || state.Periodo.includes(rowMes);
+        const periodBarOk = !periodBarFilter || (rowMes === periodBarFilter);
+
+        const fornOk = state.Fornecedor.length === 0 || state.Fornecedor.includes(r.fornecedor);
+        const cnpjOk = state.CNPJ.length === 0 || state.CNPJ.includes(r.cnpj);
+        const faixaOk = state.FaixaValor.length === 0 || state.FaixaValor.includes(r.faixaValor);
+        const notaOk = state.Nota.length === 0 || state.Nota.includes(r.nota);
+
+        let barOk = true;
+        if (barFilter && barFilter.label) {
+            barOk = (r.fornecedor === barFilter.label);
+        }
+
+        let searchOk = true;
+        if (state.search) {
+            const q = state.search;
+            searchOk = r.fornecedor.toLowerCase().includes(q) ||
+                       r.cnpj.toLowerCase().includes(q) ||
+                       r.nota.toLowerCase().includes(q) ||
+                       (r.entrada && r.entrada.toLowerCase().includes(q)) ||
+                       (r.emissao && r.emissao.toLowerCase().includes(q));
+        }
+
+        return periodoPillOk && periodBarOk && fornOk && cnpjOk && faixaOk && notaOk && barOk && searchOk;
+    });
+
+    currentPage = 1;
+    renderKpiGroups();
+    renderCharts(filtered);
+    renderTableSection();
+}
+
+/* ===== Renderização dos KPIs Executivos ===== */
+function renderKpiGroups() {
+    const kpiHolder = document.getElementById('kpiGroups');
+    if (!kpiHolder) return;
+
+    const totalValor = filtered.reduce((acc, r) => acc + r.valor, 0);
+    const totalNotas = filtered.length;
+    const ticketMedio = totalNotas ? totalValor / totalNotas : 0;
+
+    const fornsUnicos = new Set(filtered.map(x => x.fornecedor));
+    const cnpjsUnicos = new Set(filtered.map(x => x.cnpj).filter(c => c && c !== '—'));
+
+    // Maior nota
+    let maiorNota = { valor: 0, nota: '—', fornecedor: '—' };
+    filtered.forEach(r => {
+        if (r.valor > maiorNota.valor) {
+            maiorNota = { valor: r.valor, nota: r.nota, fornecedor: r.fornecedor };
+        }
+    });
+
+    // Fornecedor líder
+    const fornAgg = {};
+    filtered.forEach(r => {
+        fornAgg[r.fornecedor] = (fornAgg[r.fornecedor] || 0) + r.valor;
+    });
+    const sortedForns = Object.entries(fornAgg).sort((a, b) => b[1] - a[1]);
+    const top1 = sortedForns[0] || ['Nenhum', 0];
+    const top1Share = totalValor > 0 ? (top1[1] / totalValor) * 100 : 0;
+
+    // Concentração Top 30
+    const top30Sum = sortedForns.slice(0, 30).reduce((acc, x) => acc + x[1], 0);
+    const top30Share = totalValor > 0 ? (top30Sum / totalValor) * 100 : 0;
+
+    kpiHolder.innerHTML = `
+        <!-- Grupo 1: Visão Financeira e Volume -->
+        <div class="kpi-group">
+            <div class="title"><i class="fa-solid fa-coins"></i> Indicadores Financeiros & Volume</div>
+            <div class="kpi-grid">
+                <div class="kpi">
+                    <div class="lab">Valor Total das Compras</div>
+                    <div class="val">${BRL(totalValor)}</div>
+                    <div class="sub">Soma de todas as notas do período</div>
+                </div>
+                <div class="kpi">
+                    <div class="lab">Total de Notas Fiscais</div>
+                    <div class="val" style="color: #2563eb;">${NUM(totalNotas)}</div>
+                    <div class="sub">Documentos de entrada processados</div>
+                </div>
+                <div class="kpi">
+                    <div class="lab">Ticket Médio por Nota</div>
+                    <div class="val" style="color: var(--ok);">${BRL(ticketMedio)}</div>
+                    <div class="sub">Média financeira por nota emitida</div>
+                </div>
+                <div class="kpi">
+                    <div class="lab">Maior Compra / Nota</div>
+                    <div class="val" style="color: #6366f1;">${BRL(maiorNota.valor)}</div>
+                    <div class="sub" title="${maiorNota.fornecedor}">NF ${maiorNota.nota} • <strong>${maiorNota.fornecedor.slice(0, 22)}${maiorNota.fornecedor.length > 22 ? '...' : ''}</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grupo 2: Fornecedores e Concentração de Mercado -->
+        <div class="kpi-group">
+            <div class="title"><i class="fa-solid fa-handshake"></i> Fornecedores & Concentração</div>
+            <div class="kpi-grid">
+                <div class="kpi">
+                    <div class="lab">Fornecedores Ativos</div>
+                    <div class="val" style="color: #0284c7;">${NUM(fornsUnicos.size)}</div>
+                    <div class="sub">Empresas parceiras distintas</div>
+                </div>
+                <div class="kpi">
+                    <div class="lab">CNPJs Cadastrados</div>
+                    <div class="val" style="color: #475569;">${NUM(cnpjsUnicos.size)}</div>
+                    <div class="sub">Inscrições fiscais auditadas</div>
+                </div>
+                <div class="kpi">
+                    <div class="lab">Fornecedor Líder</div>
+                    <div class="val" style="font-size: 1.35rem; color: #7c3aed;" title="${top1[0]}">${BRL(top1[1])}</div>
+                    <div class="sub" title="${top1[0]}"><strong>${top1[0].slice(0, 20)}${top1[0].length > 20 ? '...' : ''}</strong> (${PCT(top1Share)})</div>
+                </div>
+                <div class="kpi">
+                    <div class="lab">Concentração Top 30</div>
+                    <div class="val" style="color: #d97706;">${PCT(top30Share)}</div>
+                    <div class="sub">${BRL(top30Sum)} nas 30 maiores empresas</div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Atualiza badge de total
+    const badgeBadge = document.getElementById('mainChartTotalBadge');
+    if (badgeBadge) {
+        badgeBadge.textContent = `Total Filtrado: ${BRL(totalValor)}`;
+    }
+}
+
+/* ===== Alternar Métrica do Gráfico Principal ===== */
+function setMainChartMetric(metric) {
+    mainMetric = metric;
+    const btnV = document.getElementById('btnViewValor');
+    const btnQ = document.getElementById('btnViewQtd');
+    const titleText = document.getElementById('mainChartTitleText');
+
+    if (metric === 'valor') {
+        btnV?.classList.add('active');
+        btnQ?.classList.remove('active');
+        if (titleText) titleText.textContent = 'Ranking dos 30 Maiores Fornecedores por Valor Total (R$)';
+    } else {
+        btnQ?.classList.add('active');
+        btnV?.classList.remove('active');
+        if (titleText) titleText.textContent = 'Ranking dos 30 Maiores Fornecedores por Volume de Notas';
+    }
+
+    renderMainChart(filtered);
+}
+
+/* ===== Filtros por Clique em Barras ===== */
+function onChartBarClick(evt, elements, chartInstance) {
+    if (!elements || !elements.length) return;
+    const idx = elements[0].index;
+    const label = chartInstance.data.labels[idx];
+    if (!label) return;
+
+    if (barFilter && barFilter.label === label) {
+        barFilter = null;
+    } else {
+        barFilter = { label: label };
+    }
+
+    updateBarFilterUI();
+    withStableScroll(() => applyFilters());
+
+    if (!tableLoaded) {
+        toggleTableVisibility(true);
+    }
+}
+
+function updateBarFilterUI() {
+    const chip = document.getElementById('barFilterChip');
+    const clearBarBtn = document.getElementById('clearBarFilterBtn');
+
+    if (barFilter && barFilter.label) {
+        if (chip) {
+            chip.style.display = 'inline-flex';
+            chip.innerHTML = `<i class="fa-solid fa-filter"></i> Fornecedor: <strong>${barFilter.label}</strong>`;
+        }
+        if (clearBarBtn) clearBarBtn.style.display = 'inline-flex';
+    } else {
+        if (chip) chip.style.display = 'none';
+        if (clearBarBtn) clearBarBtn.style.display = 'none';
+    }
+}
+
+function updatePeriodBarFilterUI() {
+    const chip = document.getElementById('periodBarFilterChip');
+    const clearBtn = document.getElementById('clearPeriodBarFilterBtn');
+
+    if (periodBarFilter) {
+        if (chip) {
+            chip.style.display = 'inline-flex';
+            chip.innerHTML = `<i class="fa-solid fa-calendar-check"></i> Período: <strong>${periodBarFilter}</strong>`;
+        }
+        if (clearBtn) clearBtn.style.display = 'inline-flex';
+    } else {
+        if (chip) chip.style.display = 'none';
+        if (clearBtn) clearBtn.style.display = 'none';
+    }
+}
+
+const clearBarFilterBtn = document.getElementById('clearBarFilterBtn');
+if (clearBarFilterBtn) {
+    clearBarFilterBtn.addEventListener('click', () => {
+        barFilter = null;
+        updateBarFilterUI();
+        withStableScroll(() => applyFilters());
+    });
+}
+
+const clearPeriodBarFilterBtn = document.getElementById('clearPeriodBarFilterBtn');
+if (clearPeriodBarFilterBtn) {
+    clearPeriodBarFilterBtn.addEventListener('click', () => {
+        periodBarFilter = null;
+        updatePeriodBarFilterUI();
+        withStableScroll(() => applyFilters());
+    });
+}
+
+/* ===== Renderização de Todos os Gráficos ===== */
+function renderCharts(rows) {
+    renderPeriodoChart(rows);
+    renderMainChart(rows);
+    renderSideFrequencyChart(rows);
+    renderFaixasValorChart(rows);
+}
+
+/* 0. Gráfico de Compras por Período (Barras Verdes com Linha de Média) */
+function renderPeriodoChart(rows) {
+    const ctx = document.getElementById('periodoChart')?.getContext('2d');
+    if (!ctx) return;
+
+    // Agrupa compras por período conforme tipo de data selecionado
+    const statsByPeriod = {};
+    rows.forEach(r => {
+        const mesKey = (periodoDateType === 'emissao' ? r.mesEmissao : r.mesEntrada) || r.periodo || 'Não informado';
+        if (!statsByPeriod[mesKey]) {
+            statsByPeriod[mesKey] = { valor: 0, qtd: 0 };
+        }
+        statsByPeriod[mesKey].valor += r.valor;
+        statsByPeriod[mesKey].qtd += 1;
+    });
+
+    const sortedEntries = Object.entries(statsByPeriod).sort((a, b) => {
+        if (!a[0] || a[0] === 'Não informado') return 1;
+        if (!b[0] || b[0] === 'Não informado') return -1;
+        const nomes = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+        const pa = String(a[0]).toLowerCase().split(' ');
+        const pb = String(b[0]).toLowerCase().split(' ');
+        const ya = parseInt(pa[1], 10) || 0;
+        const yb = parseInt(pb[1], 10) || 0;
+        if (ya !== yb) return ya - yb;
+        const ma = nomes.indexOf(pa[0]);
+        const mb = nomes.indexOf(pb[0]);
+        return ma - mb;
+    });
+
+    const labels = sortedEntries.map(x => x[0]);
+    const values = sortedEntries.map(x => x[1].valor);
+    const avgValor = values.length ? (values.reduce((a, b) => a + b, 0) / values.length) : 0;
+
+    // Atualiza badge de média no topo do card
+    const mediaBadge = document.getElementById('periodoChartMediaBadge');
+    if (mediaBadge) {
+        mediaBadge.textContent = `Média Mensal: ${BRL(avgValor)}`;
+    }
+
+    if (charts.periodo) {
+        charts.periodo.destroy();
+    }
+
+    charts.periodo = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Compras no Período (R$)',
+                    data: values,
+                    backgroundColor: sortedEntries.map(x => {
+                        if (periodBarFilter && periodBarFilter === x[0]) {
+                            return '#047857'; // Verde escuro para barra clicada/ativa
+                        }
+                        return '#10b981'; // Verde solicitado
+                    }),
+                    hoverBackgroundColor: '#059669',
+                    borderRadius: 8,
+                    barPercentage: 0.52,
+                    categoryPercentage: 0.8,
+                    order: 2,
+                    datalabels: {
+                        display: true,
+                        anchor: 'end',
+                        align: 'end',
+                        offset: 4,
+                        color: '#065f46',
+                        font: { weight: '800', size: 11 },
+                        formatter: v => formatCompactBRL(v)
+                    }
+                },
+                {
+                    label: `Média Mensal: ${BRL(avgValor)}`,
+                    type: 'line',
+                    data: labels.map(() => avgValor),
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                    borderWidth: 2.5,
+                    borderDash: [8, 4],
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#ef4444',
+                    order: 1,
+                    datalabels: { display: false }
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 250 },
+            onClick: (evt, elements) => {
+                if (!elements || !elements.length) return;
+                const idx = elements[0].index;
+                const mesClicked = labels[idx];
+                if (!mesClicked) return;
+
+                if (periodBarFilter === mesClicked) {
+                    periodBarFilter = null;
+                } else {
+                    periodBarFilter = mesClicked;
+                }
+                updatePeriodBarFilterUI();
+                withStableScroll(() => applyFilters());
+
+                if (!tableLoaded) {
+                    toggleTableVisibility(true);
+                }
+            },
+            scales: {
+                y: {
+                    grace: '20%',
+                    beginAtZero: true,
+                    grid: { color: '#f1f5f9' },
+                    ticks: {
+                        callback: v => formatCompactBRL(v),
+                        font: { size: 11, weight: '600' },
+                        color: '#64748b'
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { size: 11, weight: '700' },
+                        color: '#1e293b'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        generateLabels: (chart) => {
+                            const gen = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                            return gen.map(l => {
+                                if (l.datasetIndex === 1) {
+                                    l.fillStyle = 'transparent';
+                                    l.strokeStyle = '#ef4444';
+                                    l.lineWidth = 2.5;
+                                    l.lineDash = [8, 4];
+                                }
+                                return l;
+                            });
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#0f172a',
+                    titleFont: { size: 13, weight: 'bold' },
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        title: (items) => items[0]?.label || '',
+                        label: (context) => {
+                            if (context.datasetIndex === 1) {
+                                return `Média Mensal: ${BRL(avgValor)}`;
+                            }
+                            const mesName = context.label;
+                            const s = statsByPeriod[mesName] || { valor: 0, qtd: 0 };
+                            const avgTicket = s.qtd ? (s.valor / s.qtd) : 0;
+                            return [
+                                `Compras no Mês: ${BRL(s.valor)}`,
+                                `Volume de Notas: ${NUM(s.qtd)} notas`,
+                                `Ticket Médio: ${BRL(avgTicket)}`,
+                                `Média do Período: ${BRL(avgValor)}`
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+/* 1. Gráfico Principal: Top 20 Maiores Fornecedores (Barras Horizontais / Lado a Lado) */
+function renderMainChart(rows) {
+    const ctx = document.getElementById('topFornecedoresChart')?.getContext('2d');
+    if (!ctx) return;
+
+    const agg = {};
+    const totalGeralValor = rows.reduce((acc, r) => acc + r.valor, 0);
+
+    rows.forEach(r => {
+        if (!agg[r.fornecedor]) {
+            agg[r.fornecedor] = { valor: 0, qtd: 0, cnpj: r.cnpj };
+        }
+        agg[r.fornecedor].valor += r.valor;
+        agg[r.fornecedor].qtd += 1;
+    });
+
+    const isValor = (mainMetric === 'valor');
+    const sorted = Object.entries(agg)
+        .sort((a, b) => isValor ? (b[1].valor - a[1].valor) : (b[1].qtd - a[1].qtd))
+        .slice(0, 30);
+
+    const labels = sorted.map(x => x[0]);
+    const dataValues = sorted.map(x => isValor ? x[1].valor : x[1].qtd);
+
+    const backgroundColors = sorted.map((_, i) => {
+        if (barFilter && barFilter.label) {
+            return sorted[i][0] === barFilter.label ? '#1e40af' : '#cbd5e1';
+        }
+        const opacity = Math.max(0.45, 1 - (i * 0.025));
+        return `rgba(37, 99, 235, ${opacity})`;
+    });
+
+    if (charts.topFornecedores) {
+        charts.topFornecedores.destroy();
+    }
+
+    charts.topFornecedores = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: isValor ? 'Valor Comprado (R$)' : 'Quantidade de Notas',
+                data: dataValues,
+                backgroundColor: backgroundColors,
+                borderRadius: 6,
+                barPercentage: 0.78,
+                categoryPercentage: 0.88,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            indexAxis: 'y', // Barras horizontais de lado a lado
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 250 },
+            onClick: (evt, elements) => onChartBarClick(evt, elements, charts.topFornecedores),
+            scales: {
+                x: {
+                    grace: '25%',
+                    grid: { color: '#f1f5f9' },
+                    ticks: {
+                        callback: v => isValor ? formatCompactBRL(v) : NUM(v),
+                        font: { size: 11, weight: '600' },
+                        color: '#64748b'
+                    }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { size: 11, weight: '700' },
+                        color: '#1e293b',
+                        callback: function(val) {
+                            const lbl = this.getLabelForValue(val) || '';
+                            return lbl.length > 32 ? lbl.slice(0, 30) + '…' : lbl;
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#0f172a',
+                    titleFont: { size: 13, weight: 'bold' },
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        title: (items) => items[0]?.label || '',
+                        label: (context) => {
+                            const fornName = context.label;
+                            const d = agg[fornName] || { valor: 0, qtd: 0, cnpj: '—' };
+                            const share = totalGeralValor > 0 ? (d.valor / totalGeralValor) * 100 : 0;
+                            const ticketMedio = d.qtd ? (d.valor / d.qtd) : 0;
+
+                            return [
+                                `CNPJ: ${formatCnpj(d.cnpj)}`,
+                                `Valor Total: ${BRL(d.valor)}`,
+                                `Participação: ${PCT(share)}`,
+                                `Volume de Notas: ${NUM(d.qtd)} notas`,
+                                `Ticket Médio: ${BRL(ticketMedio)}`
+                            ];
+                        }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    align: 'end',
+                    anchor: 'end',
+                    offset: 6,
+                    clip: false,
+                    color: '#1e40af',
+                    font: { weight: '800', size: 11 },
+                    formatter: (v) => isValor ? BRL(v) : NUM(v) + ' notas'
+                }
+            }
+        }
+    });
+}
+
+/* 2. Gráfico Lado a Lado: Frequência de Compras (Top Fornecedores por Qtd de Notas) */
+function renderSideFrequencyChart(rows) {
+    const ctx = document.getElementById('freqFornecedoresChart')?.getContext('2d');
+    if (!ctx) return;
+
+    const agg = {};
+    rows.forEach(r => {
+        if (!agg[r.fornecedor]) {
+            agg[r.fornecedor] = { qtd: 0, valor: 0 };
+        }
+        agg[r.fornecedor].qtd += 1;
+        agg[r.fornecedor].valor += r.valor;
+    });
+
+    const sorted = Object.entries(agg)
+        .sort((a, b) => b[1].qtd - a[1].qtd)
+        .slice(0, 15);
+
+    const labels = sorted.map(x => x[0]);
+    const values = sorted.map(x => x[1].qtd);
+
+    if (charts.freqFornecedores) {
+        charts.freqFornecedores.destroy();
+    }
+
+    charts.freqFornecedores = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Notas Emitidas',
+                data: values,
+                backgroundColor: '#0284c7',
+                borderRadius: 6,
+                barPercentage: 0.75
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            onClick: (evt, elements) => onChartBarClick(evt, elements, charts.freqFornecedores),
+            scales: {
+                x: {
+                    grace: '20%',
+                    grid: { color: '#f1f5f9' },
+                    ticks: { font: { size: 11 } }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { size: 10, weight: '600' },
+                        callback: function(val) {
+                            const lbl = this.getLabelForValue(val) || '';
+                            return lbl.length > 24 ? lbl.slice(0, 22) + '…' : lbl;
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (c) => {
+                            const forn = c.label;
+                            const d = agg[forn] || { qtd: 0, valor: 0 };
+                            return [
+                                `Quantidade: ${NUM(d.qtd)} notas`,
+                                `Total: ${BRL(d.valor)}`
+                            ];
+                        }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    align: 'end',
+                    anchor: 'end',
+                    offset: 4,
+                    color: '#0369a1',
+                    font: { weight: 'bold', size: 10 },
+                    formatter: v => NUM(v)
+                }
+            }
+        }
+    });
+}
+
+/* 3. Gráfico Lado a Lado: Distribuição das Compras por Faixa de Valor */
+function renderFaixasValorChart(rows) {
+    const ctx = document.getElementById('faixasValorChart')?.getContext('2d');
+    if (!ctx) return;
+
+    const agg = {};
+    FAIXAS_VALOR_ORDEM.forEach(f => {
+        agg[f] = { valor: 0, qtd: 0 };
+    });
+
+    rows.forEach(r => {
+        const f = r.faixaValor;
+        if (agg[f]) {
+            agg[f].valor += r.valor;
+            agg[f].qtd += 1;
+        }
+    });
+
+    const labels = FAIXAS_VALOR_ORDEM;
+    const valorValues = labels.map(l => agg[l].valor);
+
+    if (charts.faixasValor) {
+        charts.faixasValor.destroy();
+    }
+
+    charts.faixasValor = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Valor Total (R$)',
+                data: valorValues,
+                backgroundColor: [
+                    '#38bdf8',
+                    '#3b82f6',
+                    '#6366f1',
+                    '#8b5cf6',
+                    '#d946ef'
+                ],
+                borderRadius: 8,
+                barPercentage: 0.65
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            scales: {
+                y: {
+                    grace: '20%',
+                    grid: { color: '#f1f5f9' },
+                    ticks: {
+                        callback: v => formatCompactBRL(v),
+                        font: { size: 11 }
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 10, weight: '600' } }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (c) => {
+                            const f = c.label;
+                            const d = agg[f] || { valor: 0, qtd: 0 };
+                            return [
+                                `Montante: ${BRL(d.valor)}`,
+                                `Notas: ${NUM(d.qtd)} notas`
+                            ];
+                        }
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    align: 'end',
+                    anchor: 'end',
+                    offset: 4,
+                    color: '#1e293b',
+                    font: { weight: 'bold', size: 10 },
+                    formatter: v => formatCompactBRL(v)
+                }
+            }
+        }
+    });
+}
+
+/* ===== Tabela sob Demanda ===== */
+const toggleTableBtn = document.getElementById('toggleTableBtn');
+const tablePlaceholder = document.getElementById('tablePlaceholder');
+const gridWrap = document.getElementById('gridWrap');
+
+function toggleTableVisibility(forceOpen = null) {
+    if (forceOpen !== null) {
+        tableLoaded = forceOpen;
+    } else {
+        tableLoaded = !tableLoaded;
+    }
+
+    if (tableLoaded) {
+        if (tablePlaceholder) tablePlaceholder.style.display = 'none';
+        if (gridWrap) gridWrap.style.display = 'block';
+        if (toggleTableBtn) {
+            toggleTableBtn.innerHTML = '<i class="fa-solid fa-folder-closed"></i> Ocultar Tabela';
+        }
+        renderTableSection();
+    } else {
+        if (tablePlaceholder) tablePlaceholder.style.display = 'block';
+        if (gridWrap) gridWrap.style.display = 'none';
+        if (toggleTableBtn) {
+            toggleTableBtn.innerHTML = '<i class="fa-solid fa-folder-open"></i> Carregar Tabela Completa';
+        }
+    }
+}
+
+if (toggleTableBtn) {
+    toggleTableBtn.addEventListener('click', () => toggleTableVisibility());
+}
+
+function renderTableSection() {
+    if (!tableLoaded) return;
+
+    const totalFiltradoValor = filtered.reduce((acc, r) => acc + r.valor, 0);
+
+    const sorted = [...filtered].sort((a, b) => {
+        let va = a[sortState.key];
+        let vb = b[sortState.key];
+
+        if (sortState.key === 'share') {
+            va = totalFiltradoValor > 0 ? (a.valor / totalFiltradoValor) : 0;
+            vb = totalFiltradoValor > 0 ? (b.valor / totalFiltradoValor) : 0;
+        }
+
+        if (sortState.type === 'num') {
+            va = +va || 0;
+            vb = +vb || 0;
+            return sortState.dir === 'asc' ? va - vb : vb - va;
+        } else {
+            va = String(va || '').toLowerCase();
+            vb = String(vb || '').toLowerCase();
+            return sortState.dir === 'asc' ? va.localeCompare(vb, 'pt-BR') : vb.localeCompare(va, 'pt-BR');
+        }
+    });
+
+    const totalItems = sorted.length;
+    const totalPages = pageSize === Infinity ? 1 : Math.ceil(totalItems / pageSize);
+    currentPage = Math.max(1, Math.min(currentPage, totalPages || 1));
+
+    const startIdx = pageSize === Infinity ? 0 : (currentPage - 1) * pageSize;
+    const endIdx = pageSize === Infinity ? totalItems : Math.min(startIdx + pageSize, totalItems);
+    const pageRows = sorted.slice(startIdx, endIdx);
+
+    const tbody = document.querySelector('#grid tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!pageRows.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 28px; color: #64748b; font-weight: 600;">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
+    } else {
+        const frag = document.createDocumentFragment();
+        pageRows.forEach(r => {
+            const tr = document.createElement('tr');
+            const share = totalFiltradoValor > 0 ? (r.valor / totalFiltradoValor) * 100 : 0;
+
+            tr.innerHTML = `
+                <td class="cell-nota">${r.nota}</td>
+                <td class="cell-fornecedor" title="Clique para filtrar apenas este fornecedor">${r.fornecedor}</td>
+                <td class="cell-cnpj">${formatCnpj(r.cnpj)}</td>
+                <td class="cell-valor">${BRL(r.valor)}</td>
+                <td class="cell-share">${PCT(share)}</td>
+            `;
+
+            tr.querySelector('.cell-fornecedor').addEventListener('click', () => {
+                toggleSupplierFilter(r.fornecedor);
+            });
+
+            frag.appendChild(tr);
+        });
+        tbody.appendChild(frag);
+    }
+
+    const tfootNotas = document.getElementById('tfootTotalNotas');
+    const tfootForns = document.getElementById('tfootTotalFornecedores');
+    const tfootValor = document.getElementById('tfootTotalValor');
+
+    const uniqueForns = new Set(filtered.map(x => x.fornecedor)).size;
+    if (tfootNotas) tfootNotas.textContent = `Total: ${NUM(totalItems)} notas`;
+    if (tfootForns) tfootForns.textContent = `${NUM(uniqueForns)} fornecedores distintos`;
+    if (tfootValor) tfootValor.textContent = BRL(totalFiltradoValor);
+
+    renderPagination(totalItems, totalPages);
+}
+
+function toggleSupplierFilter(forn) {
+    const set = new Set(state.Fornecedor);
+    if (set.has(forn)) {
+        set.delete(forn);
+    } else {
+        set.add(forn);
+    }
+    state.Fornecedor = [...set];
+    pillInstances.Fornecedor.sync();
+    withStableScroll(() => applyFilters());
+}
+
+/* ===== Ordenação por Cabeçalho de Coluna ===== */
+document.querySelectorAll('#grid thead th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        const type = th.dataset.type || 'text';
+
+        if (sortState.key === key) {
+            sortState.dir = (sortState.dir === 'asc') ? 'desc' : 'asc';
+        } else {
+            sortState.key = key;
+            sortState.type = type;
+            sortState.dir = (key === 'valor' || key === 'share' || key === 'nota') ? 'desc' : 'asc';
+        }
+
+        document.querySelectorAll('#grid thead th.sortable').forEach(el => {
+            el.classList.remove('active');
+            const icon = el.querySelector('.sort');
+            if (icon) icon.className = 'fa-solid fa-sort sort';
+        });
+
+        th.classList.add('active');
+        const icon = th.querySelector('.sort');
+        if (icon) {
+            icon.className = `fa-solid fa-sort-${sortState.dir === 'asc' ? 'up' : 'down'} sort`;
+        }
+
+        renderTableSection();
+    });
+});
+
+/* ===== Paginação ===== */
+function renderPagination(totalItems, totalPages) {
+    const holder = document.getElementById('tablePagination');
+    if (!holder) return;
+
+    if (!totalItems) {
+        holder.innerHTML = '';
+        return;
+    }
+
+    const start = (pageSize === Infinity) ? 1 : (currentPage - 1) * pageSize + 1;
+    const end = (pageSize === Infinity) ? totalItems : Math.min(currentPage * pageSize, totalItems);
+
+    holder.innerHTML = `
+        <div class="pagination-info">
+            Mostrando <strong>${NUM(start)}</strong> a <strong>${NUM(end)}</strong> de <strong>${NUM(totalItems)}</strong> notas
+        </div>
+        <div class="page-size-selector">
+            <span>Itens por página:</span>
+            <select id="pageSizeSelect">
+                <option value="25" ${pageSize === 25 ? 'selected' : ''}>25</option>
+                <option value="50" ${pageSize === 50 ? 'selected' : ''}>50</option>
+                <option value="100" ${pageSize === 100 ? 'selected' : ''}>100</option>
+                <option value="250" ${pageSize === 250 ? 'selected' : ''}>250</option>
+                <option value="all" ${pageSize === Infinity ? 'selected' : ''}>Todas</option>
+            </select>
+        </div>
+        <div class="pagination-controls">
+            <button class="pagination-btn" id="btnFirstPage" ${currentPage === 1 ? 'disabled' : ''}>
+                <i class="fa-solid fa-angles-left"></i>
+            </button>
+            <button class="pagination-btn" id="btnPrevPage" ${currentPage === 1 ? 'disabled' : ''}>
+                <i class="fa-solid fa-chevron-left"></i> Anterior
+            </button>
+            <span style="padding: 0 8px; font-weight: 700;">${currentPage} / ${totalPages || 1}</span>
+            <button class="pagination-btn" id="btnNextPage" ${currentPage >= totalPages ? 'disabled' : ''}>
+                Próximo <i class="fa-solid fa-chevron-right"></i>
+            </button>
+            <button class="pagination-btn" id="btnLastPage" ${currentPage >= totalPages ? 'disabled' : ''}>
+                <i class="fa-solid fa-angles-right"></i>
+            </button>
+        </div>
+    `;
+
+    document.getElementById('pageSizeSelect')?.addEventListener('change', e => {
+        const val = e.target.value;
+        pageSize = (val === 'all') ? Infinity : parseInt(val, 10);
+        currentPage = 1;
+        renderTableSection();
+    });
+
+    document.getElementById('btnFirstPage')?.addEventListener('click', () => {
+        if (currentPage > 1) { currentPage = 1; renderTableSection(); }
+    });
+    document.getElementById('btnPrevPage')?.addEventListener('click', () => {
+        if (currentPage > 1) { currentPage--; renderTableSection(); }
+    });
+    document.getElementById('btnNextPage')?.addEventListener('click', () => {
+        if (currentPage < totalPages) { currentPage++; renderTableSection(); }
+    });
+    document.getElementById('btnLastPage')?.addEventListener('click', () => {
+        if (currentPage < totalPages) { currentPage = totalPages; renderTableSection(); }
+    });
+}
+
+/* ===== Exportação de Dados para CSV ===== */
+const exportCsvBtn = document.getElementById('exportCsvBtn');
+if (exportCsvBtn) {
+    exportCsvBtn.addEventListener('click', () => {
+        if (!filtered || !filtered.length) {
+            showWarn('Nenhum dado disponível para exportação.');
+            return;
+        }
+
+        const headers = ['Número da Nota', 'Nome do Fornecedor', 'CNPJ', 'Valor (R$)', 'Data Entrada', 'Data Emissão', 'Faixa de Valor'];
+        const csvRows = [headers.join(';')];
+
+        filtered.forEach(r => {
+            const row = [
+                `"${r.nota}"`,
+                `"${r.fornecedor.replace(/"/g, '""')}"`,
+                `"${formatCnpj(r.cnpj)}"`,
+                r.valor.toFixed(2).replace('.', ','),
+                `"${r.entrada || ''}"`,
+                `"${r.emissao || ''}"`,
+                `"${r.faixaValor}"`
+            ];
+            csvRows.push(row.join(';'));
+        });
+
+        const csvString = '\uFEFF' + csvRows.join('\r\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `compras_filtradas_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+}
+
+/* ===== Inicialização Limpa ===== */
+window.addEventListener('DOMContentLoaded', () => {
+    // Inicializa a aplicação limpa, aguardando o usuário selecionar o arquivo
+    allData = [];
+    filtered = [];
+    renderKpiGroups();
+    renderCharts([]);
+
+    // Suporte a arrastar e soltar arquivo diretamente na tela
+    window.addEventListener('dragover', e => { e.preventDefault(); });
+    window.addEventListener('drop', e => {
+        e.preventDefault();
+        const f = e.dataTransfer?.files?.[0];
+        if (f) {
+            if (fileNameEl) fileNameEl.textContent = f.name;
+            readFile(f);
+        }
+    });
+});
+
+</script>
+</body>
+
+</html>
