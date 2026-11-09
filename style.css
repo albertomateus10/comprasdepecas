@@ -897,6 +897,13 @@ td.cell-cnpj {
     font-size: 0.86rem;
 }
 
+td.cell-data {
+    font-family: monospace;
+    color: #475569;
+    font-size: 0.86rem;
+    white-space: nowrap;
+}
+
 td.cell-valor {
     font-weight: 800;
     color: #0f172a;

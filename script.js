@@ -54,25 +54,46 @@ function toNumberBR(x) {
 
 function parseDateExcel(v) {
     if (v === null || v === undefined || v === '') return null;
+    if (v instanceof Date) return isNaN(+v) ? null : v;
     if (typeof v === 'number') {
-        const base = new Date(Date.UTC(1899, 11, 30));
-        return new Date(base.getTime() + v * 86400000);
+        // Serial do Excel: parte inteira = dia, parte fracionária = horário
+        const base = Date.UTC(1899, 11, 30);
+        const u = new Date(base + Math.round(v * 86400) * 1000);
+        return new Date(u.getUTCFullYear(), u.getUTCMonth(), u.getUTCDate(), u.getUTCHours(), u.getUTCMinutes(), u.getUTCSeconds());
     }
     if (typeof v === 'string') {
-        const s = v.trim();
+        let s = v.trim();
+        let hh = 0, mi = 0, ss = 0;
+        const tm = s.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+        if (tm) {
+            hh = parseInt(tm[1], 10);
+            mi = parseInt(tm[2], 10);
+            ss = tm[3] ? parseInt(tm[3], 10) : 0;
+            s = s.replace(tm[0], ' ').replace(/[T,]/g, ' ').trim();
+        }
         const parts = s.split(/[\/\-]/);
         if (parts.length === 3) {
-            if (parts[2].length === 4) {
-                return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+            if (parts[2].trim().length === 4) {
+                return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10), hh, mi, ss);
             }
             if (parts[0].length === 4) {
-                return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10), hh, mi, ss);
             }
         }
-        const d = new Date(s);
+        const d = new Date(v.trim());
         return isNaN(+d) ? null : d;
     }
     return null;
+}
+
+/* Formata data e, quando existir, o horário (dd/mm/aaaa HH:MM[:SS]) */
+function formatDataHora(d) {
+    if (!d || isNaN(+d)) return '';
+    const data = d.toLocaleDateString('pt-BR');
+    const h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
+    if (!h && !m && !s) return data;
+    const p = n => String(n).padStart(2, '0');
+    return `${data} ${p(h)}:${p(m)}${s ? ':' + p(s) : ''}`;
 }
 
 const NOMES_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -99,12 +120,18 @@ function sortMesAno(arr) {
 }
 
 function formatCnpj(v) {
-    if (!v) return '—';
+    if (v === null || v === undefined || v === '') return '—';
     const s = String(v).trim();
-    if (s.includes('/') || s.includes('.')) return s;
-    const clean = s.replace(/\D/g, '');
-    if (clean.length === 14) {
-        return clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+    if (!s || s === '—') return '—';
+    let d = s.replace(/\D/g, '');
+    if (!d) return s;
+    // Excel costuma remover zeros à esquerda quando o CNPJ vem como número
+    if (d.length > 11 && d.length < 14) d = d.padStart(14, '0');
+    if (d.length === 14) {
+        return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+    }
+    if (d.length === 11) {
+        return d.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
     }
     return s;
 }
@@ -422,7 +449,7 @@ function parseRows(headers, data) {
         }
 
         const fornecedor = String(r[colFornecedor] ?? '').trim() || 'Fornecedor não identificado';
-        const cnpj = String(r[colCnpj] ?? '').trim() || '—';
+        const cnpj = formatCnpj(r[colCnpj]);
         const valor = toNumberBR(r[colValor]);
 
         const rawEnt = r[colEntrada];
@@ -440,8 +467,10 @@ function parseRows(headers, data) {
             cnpj: cnpj,
             valor: valor,
             faixaValor: getFaixaValor(valor),
-            entrada: dateEnt ? dateEnt.toLocaleDateString('pt-BR') : '',
-            emissao: dateEmis ? dateEmis.toLocaleDateString('pt-BR') : '',
+            entrada: formatDataHora(dateEnt),
+            emissao: formatDataHora(dateEmis),
+            entradaTs: dateEnt ? +dateEnt : 0,
+            emissaoTs: dateEmis ? +dateEmis : 0,
             mesEntrada: mesEnt,
             mesEmissao: mesEmis,
             periodo: mesEnt !== 'Não informado' ? mesEnt : mesEmis
@@ -1309,7 +1338,7 @@ function renderTableSection() {
     tbody.innerHTML = '';
 
     if (!pageRows.length) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 28px; color: #64748b; font-weight: 600;">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 28px; color: #64748b; font-weight: 600;">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
     } else {
         const frag = document.createDocumentFragment();
         pageRows.forEach(r => {
@@ -1318,6 +1347,8 @@ function renderTableSection() {
 
             tr.innerHTML = `
                 <td class="cell-nota">${r.nota}</td>
+                <td class="cell-data">${r.emissao || '—'}</td>
+                <td class="cell-data">${r.entrada || '—'}</td>
                 <td class="cell-fornecedor" title="Clique para filtrar apenas este fornecedor">${r.fornecedor}</td>
                 <td class="cell-cnpj">${formatCnpj(r.cnpj)}</td>
                 <td class="cell-valor">${BRL(r.valor)}</td>
@@ -1368,7 +1399,7 @@ document.querySelectorAll('#grid thead th.sortable').forEach(th => {
         } else {
             sortState.key = key;
             sortState.type = type;
-            sortState.dir = (key === 'valor' || key === 'share' || key === 'nota') ? 'desc' : 'asc';
+            sortState.dir = (key === 'valor' || key === 'share' || key === 'nota' || key === 'emissaoTs' || key === 'entradaTs') ? 'desc' : 'asc';
         }
 
         document.querySelectorAll('#grid thead th.sortable').forEach(el => {
