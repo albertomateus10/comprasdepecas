@@ -908,6 +908,79 @@ td.cell-cnpj {
     font-size: 0.86rem;
 }
 
+/* Painel de dados do fornecedor selecionado */
+.supplier-detail {
+    margin-top: 16px;
+    background: #fff;
+    border: 1px solid #bfdbfe;
+    border-left: 5px solid var(--primary);
+    border-radius: 16px;
+    padding: 18px 20px;
+    box-shadow: 0 6px 20px rgba(30, 64, 175, 0.08);
+}
+.supplier-detail-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+.supplier-detail-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--primary);
+    font-size: 1.4rem;
+}
+.supplier-detail-name {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+.supplier-detail-sub {
+    font-size: 0.86rem;
+    color: #64748b;
+    font-family: monospace;
+}
+.supplier-detail-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.supplier-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+}
+.sd-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 14px;
+}
+.sd-item .lab {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.sd-item .val {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-top: 2px;
+}
+.sd-item .val.sm {
+    font-size: 0.9rem;
+    font-family: monospace;
+}
+.sd-item .sub {
+    font-size: 0.78rem;
+    color: #64748b;
+}
+
 td.cell-data {
     font-family: monospace;
     color: #475569;
@@ -1145,6 +1218,7 @@ tfoot tr td {
                     <canvas id="topFornecedoresChart"></canvas>
                 </div>
             </div>
+            <div id="supplierDetail" class="supplier-detail" style="display: none;"></div>
         </div>
 
         <!-- GRÁFICOS COMPARATIVOS LADO A LADO (2 COLUNAS) -->
@@ -1425,6 +1499,7 @@ const FAIXAS_VALOR_ORDEM = [
 /* ===== Estado da Aplicação ===== */
 let allData = [];
 let filtered = [];
+let filteredNoBar = [];   // filtros ativos, exceto o clique em fornecedor (mantém o ranking visível)
 let charts = {
     periodo: null,
     topFornecedores: null,
@@ -1836,7 +1911,7 @@ if (clearAllBtn) {
 
 /* ===== Filtragem dos Dados ===== */
 function applyFilters() {
-    filtered = allData.filter(r => {
+    filteredNoBar = allData.filter(r => {
         const rowMes = (periodoDateType === 'emissao' ? r.mesEmissao : r.mesEntrada) || r.periodo;
 
         const periodoPillOk = state.Periodo.length === 0 || state.Periodo.includes(rowMes);
@@ -1846,11 +1921,6 @@ function applyFilters() {
         const cnpjOk = state.CNPJ.length === 0 || state.CNPJ.includes(r.cnpj);
         const faixaOk = state.FaixaValor.length === 0 || state.FaixaValor.includes(r.faixaValor);
         const notaOk = state.Nota.length === 0 || state.Nota.includes(r.nota);
-
-        let barOk = true;
-        if (barFilter && barFilter.label) {
-            barOk = (r.fornecedor === barFilter.label);
-        }
 
         let searchOk = true;
         if (state.search) {
@@ -1862,12 +1932,17 @@ function applyFilters() {
                        (r.emissao && r.emissao.toLowerCase().includes(q));
         }
 
-        return periodoPillOk && periodBarOk && fornOk && cnpjOk && faixaOk && notaOk && barOk && searchOk;
+        return periodoPillOk && periodBarOk && fornOk && cnpjOk && faixaOk && notaOk && searchOk;
     });
+
+    filtered = (barFilter && barFilter.label)
+        ? filteredNoBar.filter(r => r.fornecedor === barFilter.label)
+        : filteredNoBar;
 
     currentPage = 1;
     renderKpiGroups();
-    renderCharts(filtered);
+    renderSupplierDetail();
+    renderCharts(filtered, filteredNoBar);
     renderTableSection();
 }
 
@@ -1984,13 +2059,33 @@ function setMainChartMetric(metric) {
         if (titleText) titleText.textContent = 'Ranking dos 30 Maiores Fornecedores por Volume de Notas';
     }
 
-    renderMainChart(filtered);
+    renderMainChart(filteredNoBar);
 }
 
-/* ===== Filtros por Clique em Barras ===== */
+/* ===== Filtros por Clique em Barras / Nomes dos Fornecedores ===== */
+// Descobre qual linha (fornecedor) foi clicada: barra, rótulo (nome) ou qualquer ponto da linha
+function resolveBarIndex(evt, elements, chartInstance) {
+    if (elements && elements.length) return elements[0].index;
+    const area = chartInstance.chartArea;
+    const scale = chartInstance.scales && chartInstance.scales.y;
+    if (!area || !scale || chartInstance.options.indexAxis !== 'y') return -1;
+    const x = evt.x, y = evt.y;
+    if (typeof x !== 'number' || typeof y !== 'number') return -1;
+    if (y < area.top || y > area.bottom || x < 0 || x > chartInstance.width) return -1;
+    const idx = Math.round(scale.getValueForPixel(y));
+    const total = (chartInstance.data.labels || []).length;
+    return idx >= 0 && idx < total ? idx : -1;
+}
+
+function onChartBarHover(evt, elements, chartInstance) {
+    const target = evt.native && evt.native.target;
+    if (!target) return;
+    target.style.cursor = resolveBarIndex(evt, elements, chartInstance) >= 0 ? 'pointer' : 'default';
+}
+
 function onChartBarClick(evt, elements, chartInstance) {
-    if (!elements || !elements.length) return;
-    const idx = elements[0].index;
+    const idx = resolveBarIndex(evt, elements, chartInstance);
+    if (idx < 0) return;
     const label = chartInstance.data.labels[idx];
     if (!label) return;
 
@@ -2003,9 +2098,118 @@ function onChartBarClick(evt, elements, chartInstance) {
     updateBarFilterUI();
     withStableScroll(() => applyFilters());
 
-    if (!tableLoaded) {
+    if (barFilter && !tableLoaded) {
         toggleTableVisibility(true);
     }
+
+    if (barFilter) {
+        setTimeout(() => {
+            const box = document.getElementById('supplierDetail');
+            if (box) box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 150);
+    }
+}
+
+/* O Chart.js só dispara onClick dentro da área do gráfico; aqui tornamos clicável também o nome (rótulo) do fornecedor */
+function bindSupplierLabelClick(canvasId, getChart) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const locate = (e) => {
+        const chart = getChart();
+        if (!chart || !chart.chartArea) return null;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left, y = e.clientY - rect.top;
+        if (x >= chart.chartArea.left) return null; // dentro do gráfico: tratado pelo próprio Chart.js
+        const idx = resolveBarIndex({ x, y }, [], chart);
+        return idx >= 0 ? { chart, x, y, idx } : null;
+    };
+    canvas.addEventListener('mousemove', (e) => {
+        if (locate(e)) canvas.style.cursor = 'pointer';
+    });
+    canvas.addEventListener('click', (e) => {
+        const hit = locate(e);
+        if (hit) onChartBarClick({ x: hit.x, y: hit.y }, [{ index: hit.idx }], hit.chart);
+    });
+}
+bindSupplierLabelClick('topFornecedoresChart', () => charts.topFornecedores);
+bindSupplierLabelClick('freqFornecedoresChart', () => charts.freqFornecedores);
+
+/* ===== Painel de Dados do Fornecedor (aparece apenas após o clique) ===== */
+function escHtml(t) {
+    return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function renderSupplierDetail() {
+    const box = document.getElementById('supplierDetail');
+    if (!box) return;
+    if (!barFilter || !barFilter.label) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        return;
+    }
+
+    const rows = filtered;
+    const totalValor = rows.reduce((a, r) => a + r.valor, 0);
+    const qtd = rows.length;
+    const ticket = qtd ? totalValor / qtd : 0;
+    const totalGeral = filteredNoBar.reduce((a, r) => a + r.valor, 0);
+    const share = totalGeral > 0 ? (totalValor / totalGeral) * 100 : 0;
+
+    const aggForn = {};
+    filteredNoBar.forEach(r => { aggForn[r.fornecedor] = (aggForn[r.fornecedor] || 0) + r.valor; });
+    const ranking = Object.entries(aggForn).sort((a, b) => b[1] - a[1]);
+    const pos = ranking.findIndex(x => x[0] === barFilter.label) + 1;
+
+    let maior = { valor: 0, nota: '—' };
+    rows.forEach(r => { if (r.valor > maior.valor) maior = { valor: r.valor, nota: r.nota }; });
+
+    const cnpjs = [...new Set(rows.map(r => r.cnpj).filter(c => c && c !== '—'))].map(formatCnpj);
+
+    const periodo = (key) => {
+        const ts = rows.map(r => r[key]).filter(t => t > 0);
+        if (!ts.length) return '—';
+        const a = formatDataHora(new Date(Math.min(...ts)));
+        const b = formatDataHora(new Date(Math.max(...ts)));
+        return a === b ? a : `${a} a ${b}`;
+    };
+
+    box.innerHTML = `
+        <div class="supplier-detail-head">
+            <div class="supplier-detail-title">
+                <i class="fa-solid fa-building"></i>
+                <div>
+                    <div class="supplier-detail-name">${escHtml(barFilter.label)}</div>
+                    <div class="supplier-detail-sub">${cnpjs.length ? 'CNPJ: ' + cnpjs.map(escHtml).join(' • ') : 'CNPJ não informado'}</div>
+                </div>
+            </div>
+            <div class="supplier-detail-actions">
+                <button type="button" class="table-btn" onclick="goToSupplierTable()"><i class="fa-solid fa-table-list"></i> Ver notas na tabela</button>
+                <button type="button" class="clear-bar-btn" style="display: inline-flex;" onclick="closeSupplierDetail()"><i class="fa-solid fa-xmark"></i> Fechar</button>
+            </div>
+        </div>
+        <div class="supplier-detail-grid">
+            <div class="sd-item"><div class="lab">Valor Total</div><div class="val">${BRL(totalValor)}</div></div>
+            <div class="sd-item"><div class="lab">Notas Fiscais</div><div class="val">${NUM(qtd)}</div></div>
+            <div class="sd-item"><div class="lab">Ticket Médio</div><div class="val">${BRL(ticket)}</div></div>
+            <div class="sd-item"><div class="lab">Maior Nota</div><div class="val">${BRL(maior.valor)}</div><div class="sub">NF ${escHtml(maior.nota)}</div></div>
+            <div class="sd-item"><div class="lab">Participação no Total</div><div class="val">${PCT(share)}</div><div class="sub">${pos ? pos + 'º no ranking' : ''}</div></div>
+            <div class="sd-item"><div class="lab">Período de Emissão</div><div class="val sm">${periodo('emissaoTs')}</div></div>
+            <div class="sd-item"><div class="lab">Período de Entrada</div><div class="val sm">${periodo('entradaTs')}</div></div>
+        </div>
+    `;
+    box.style.display = 'block';
+}
+
+function closeSupplierDetail() {
+    barFilter = null;
+    updateBarFilterUI();
+    withStableScroll(() => applyFilters());
+}
+
+function goToSupplierTable() {
+    if (!tableLoaded) toggleTableVisibility(true);
+    const bar = document.getElementById('tableToggleBar');
+    if (bar) bar.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function updateBarFilterUI() {
@@ -2059,10 +2263,10 @@ if (clearPeriodBarFilterBtn) {
 }
 
 /* ===== Renderização de Todos os Gráficos ===== */
-function renderCharts(rows) {
+function renderCharts(rows, rankingRows = rows) {
     renderPeriodoChart(rows);
-    renderMainChart(rows);
-    renderSideFrequencyChart(rows);
+    renderMainChart(rankingRows);
+    renderSideFrequencyChart(rankingRows);
     renderFaixasValorChart(rows);
 }
 
@@ -2298,6 +2502,7 @@ function renderMainChart(rows) {
             maintainAspectRatio: false,
             animation: { duration: 250 },
             onClick: (evt, elements) => onChartBarClick(evt, elements, charts.topFornecedores),
+            onHover: (evt, elements) => onChartBarHover(evt, elements, charts.topFornecedores),
             scales: {
                 x: {
                     grace: '25%',
@@ -2403,6 +2608,7 @@ function renderSideFrequencyChart(rows) {
             maintainAspectRatio: false,
             animation: false,
             onClick: (evt, elements) => onChartBarClick(evt, elements, charts.freqFornecedores),
+            onHover: (evt, elements) => onChartBarHover(evt, elements, charts.freqFornecedores),
             scales: {
                 x: {
                     grace: '20%',
