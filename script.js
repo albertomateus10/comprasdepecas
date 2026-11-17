@@ -175,6 +175,7 @@ let pageSize = 50;
 const state = {
     search: '',
     Periodo: [],
+    Operacao: [],
     Fornecedor: [],
     CNPJ: [],
     FaixaValor: [],
@@ -304,6 +305,7 @@ class MultiPill {
 
 const pillInstances = {
     Periodo: new MultiPill({ label: 'Período', getter: () => state.Periodo, setter: v => state.Periodo = v }),
+    Operacao: new MultiPill({ label: 'Natureza da Operação', getter: () => state.Operacao, setter: v => state.Operacao = v }),
     Fornecedor: new MultiPill({ label: 'Fornecedor', getter: () => state.Fornecedor, setter: v => state.Fornecedor = v }),
     CNPJ: new MultiPill({ label: 'CNPJ', getter: () => state.CNPJ, setter: v => state.CNPJ = v }),
     FaixaValor: new MultiPill({ label: 'Faixa de Valor', getter: () => state.FaixaValor, setter: v => state.FaixaValor = v }),
@@ -313,7 +315,7 @@ const pillInstances = {
 (function mountPills() {
     const holder = document.getElementById('filters');
     if (!holder) return;
-    ['Periodo', 'Fornecedor', 'CNPJ', 'FaixaValor', 'Nota'].forEach(k => {
+    ['Periodo', 'Operacao', 'Fornecedor', 'CNPJ', 'FaixaValor', 'Nota'].forEach(k => {
         holder.appendChild(pillInstances[k].el);
     });
 })();
@@ -400,10 +402,24 @@ function detectHeaderRow(mat) {
     return bestIdx;
 }
 
+function normalizeHeaderText(s) {
+    return String(s || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 function findCol(headers, aliases) {
     const lc = headers.map(h => String(h || '').toLowerCase().trim());
     for (const a of aliases) {
         const idx = lc.indexOf(a.toLowerCase());
+        if (idx >= 0) return idx;
+    }
+    const norm = headers.map(normalizeHeaderText);
+    for (const a of aliases) {
+        const idx = norm.indexOf(normalizeHeaderText(a));
         if (idx >= 0) return idx;
     }
     return -1;
@@ -414,6 +430,16 @@ function parseRows(headers, data) {
         const c = findCol(headers, ['Nota', 'Número da nota', 'Numero da Nota', 'NF', 'Num Nota', 'Documento']);
         return c >= 0 ? c : 0;
     })();
+
+    const colOperacao = findCol(headers, [
+        'Operação',
+        'Operacao',
+        'Natureza da Operação',
+        'Natureza da Operacao',
+        'Natureza Operação',
+        'Natureza Operacao',
+        'Natureza'
+    ]);
 
     const colFornecedor = (() => {
         const c = findCol(headers, ['Fornecedor', 'Nome do Fornecedor', 'Razão Social', 'Razao Social', 'Nome']);
@@ -449,6 +475,7 @@ function parseRows(headers, data) {
             notaStr = String(rawNota ?? '').trim();
         }
 
+        const operacao = (colOperacao >= 0 ? String(r[colOperacao] ?? '').trim() : '') || 'Não informado';
         const fornecedor = String(r[colFornecedor] ?? '').trim() || 'Fornecedor não identificado';
         const cnpj = formatCnpj(r[colCnpj]);
         const valor = toNumberBR(r[colValor]);
@@ -464,6 +491,7 @@ function parseRows(headers, data) {
         return {
             id: i + 1,
             nota: notaStr || '—',
+            operacao: operacao,
             fornecedor: fornecedor,
             cnpj: cnpj,
             valor: valor,
@@ -498,6 +526,7 @@ function initPillsAndApply() {
     const sortedMeses = sortMesAno([...new Set(meses)]);
     pillInstances.Periodo.setOptions(sortedMeses, { keepOrder: true });
 
+    pillInstances.Operacao.setOptions(allData.map(x => x.operacao));
     pillInstances.Fornecedor.setOptions(allData.map(x => x.fornecedor));
     pillInstances.CNPJ.setOptions(allData.map(x => x.cnpj));
     pillInstances.FaixaValor.setOptions(FAIXAS_VALOR_ORDEM, { keepOrder: true });
@@ -546,6 +575,7 @@ if (clearAllBtn) {
             state.search = '';
             if (qInput) qInput.value = '';
             state.Periodo = [];
+            state.Operacao = [];
             state.Fornecedor = [];
             state.CNPJ = [];
             state.FaixaValor = [];
@@ -574,6 +604,7 @@ function applyFilters() {
         const periodoPillOk = state.Periodo.length === 0 || state.Periodo.includes(rowMes);
         const periodBarOk = !periodBarFilter || (rowMes === periodBarFilter);
 
+        const operacaoOk = state.Operacao.length === 0 || state.Operacao.includes(r.operacao);
         const fornOk = state.Fornecedor.length === 0 || state.Fornecedor.includes(r.fornecedor);
         const cnpjOk = state.CNPJ.length === 0 || state.CNPJ.includes(r.cnpj);
         const faixaOk = state.FaixaValor.length === 0 || state.FaixaValor.includes(r.faixaValor);
@@ -585,11 +616,12 @@ function applyFilters() {
             searchOk = r.fornecedor.toLowerCase().includes(q) ||
                        r.cnpj.toLowerCase().includes(q) ||
                        r.nota.toLowerCase().includes(q) ||
+                       (r.operacao && r.operacao.toLowerCase().includes(q)) ||
                        (r.entrada && r.entrada.toLowerCase().includes(q)) ||
                        (r.emissao && r.emissao.toLowerCase().includes(q));
         }
 
-        return periodoPillOk && periodBarOk && fornOk && cnpjOk && faixaOk && notaOk && searchOk;
+        return periodoPillOk && periodBarOk && operacaoOk && fornOk && cnpjOk && faixaOk && notaOk && searchOk;
     });
 
     filtered = (barFilter && barFilter.label)
@@ -614,6 +646,45 @@ function renderKpiGroups() {
 
     const fornsUnicos = new Set(filtered.map(x => x.fornecedor));
     const cnpjsUnicos = new Set(filtered.map(x => x.cnpj).filter(c => c && c !== '—'));
+
+    // Natureza da Operação
+    const opAgg = {};
+    filtered.forEach(r => {
+        const op = r.operacao || 'Não informado';
+        if (!opAgg[op]) {
+            opAgg[op] = { valor: 0, qtd: 0 };
+        }
+        opAgg[op].valor += r.valor;
+        opAgg[op].qtd += 1;
+    });
+    const opKeysAll = Object.keys(opAgg);
+    const opKeysInformadas = opKeysAll.filter(k => k !== 'Não informado');
+    const operacoesAtivas = opKeysInformadas.length > 0 ? opKeysInformadas : opKeysAll;
+    const sortedOps = operacoesAtivas
+        .map(k => [k, opAgg[k]])
+        .sort((a, b) => b[1].valor - a[1].valor);
+    const topOp = sortedOps[0] || ['Nenhuma', { valor: 0, qtd: 0 }];
+    const topOpShare = totalValor > 0 ? (topOp[1].valor / totalValor) * 100 : 0;
+    const singleOpMode = totalNotas > 0 && (state.Operacao.length === 1 || sortedOps.length === 1);
+
+    let kpiOpVal = '0';
+    let kpiOpSub = 'Aguardando dados da coluna Operação';
+    let kpiOpTitle = '';
+
+    if (totalNotas > 0) {
+        if (singleOpMode) {
+            const singleName = state.Operacao.length === 1 ? state.Operacao[0] : topOp[0];
+            const singleStats = opAgg[singleName] || { valor: 0, qtd: 0 };
+            const singleShare = totalValor > 0 ? (singleStats.valor / totalValor) * 100 : 0;
+            kpiOpVal = escHtml(singleName);
+            kpiOpTitle = escHtml(singleName);
+            kpiOpSub = `<span><strong>${NUM(singleStats.qtd)} ${singleStats.qtd === 1 ? 'nota' : 'notas'}</strong> • ${BRL(singleStats.valor)} (${PCT(singleShare)})</span>`;
+        } else {
+            kpiOpVal = `${NUM(operacoesAtivas.length)} ${operacoesAtivas.length === 1 ? 'operação' : 'operações'}`;
+            kpiOpTitle = escHtml(topOp[0]);
+            kpiOpSub = `<span>Principal: <strong>${escHtml(topOp[0])}</strong> (${BRL(topOp[1].valor)} • ${PCT(topOpShare)})</span>`;
+        }
+    }
 
     // Maior nota
     let maiorNota = { valor: 0, nota: '—', fornecedor: '—' };
@@ -659,7 +730,12 @@ function renderKpiGroups() {
                 <div class="kpi">
                     <div class="lab">Maior Compra / Nota</div>
                     <div class="val" style="color: #6366f1;">${BRL(maiorNota.valor)}</div>
-                    <div class="sub" title="${maiorNota.fornecedor}">NF ${maiorNota.nota} • <strong>${maiorNota.fornecedor.slice(0, 22)}${maiorNota.fornecedor.length > 22 ? '...' : ''}</strong></div>
+                    <div class="sub" title="${escHtml(maiorNota.fornecedor)}">NF ${escHtml(maiorNota.nota)} • <strong>${escHtml(maiorNota.fornecedor.slice(0, 22))}${maiorNota.fornecedor.length > 22 ? '...' : ''}</strong></div>
+                </div>
+                <div class="kpi kpi-wide">
+                    <div class="lab">Natureza da Operação</div>
+                    <div class="val" style="color: #0f766e; ${singleOpMode ? 'font-size: 1.25rem;' : ''}" title="${kpiOpTitle}">${kpiOpVal}</div>
+                    <div class="sub" title="${kpiOpTitle}">${kpiOpSub}</div>
                 </div>
             </div>
         </div>
@@ -680,8 +756,8 @@ function renderKpiGroups() {
                 </div>
                 <div class="kpi">
                     <div class="lab">Fornecedor Líder</div>
-                    <div class="val" style="font-size: 1.35rem; color: #7c3aed;" title="${top1[0]}">${BRL(top1[1])}</div>
-                    <div class="sub" title="${top1[0]}"><strong>${top1[0].slice(0, 20)}${top1[0].length > 20 ? '...' : ''}</strong> (${PCT(top1Share)})</div>
+                    <div class="val" style="font-size: 1.35rem; color: #7c3aed;" title="${escHtml(top1[0])}">${BRL(top1[1])}</div>
+                    <div class="sub" title="${escHtml(top1[0])}"><strong>${escHtml(top1[0].slice(0, 20))}${top1[0].length > 20 ? '...' : ''}</strong> (${PCT(top1Share)})</div>
                 </div>
                 <div class="kpi">
                     <div class="lab">Concentração Top 30</div>
@@ -1624,12 +1700,13 @@ if (exportCsvBtn) {
             return;
         }
 
-        const headers = ['Número da Nota', 'Nome do Fornecedor', 'CNPJ', 'Valor (R$)', 'Data Entrada', 'Data Emissão', 'Faixa de Valor'];
+        const headers = ['Número da Nota', 'Natureza da Operação', 'Nome do Fornecedor', 'CNPJ', 'Valor (R$)', 'Data Entrada', 'Data Emissão', 'Faixa de Valor'];
         const csvRows = [headers.join(';')];
 
         filtered.forEach(r => {
             const row = [
                 `"${r.nota}"`,
+                `"${(r.operacao || 'Não informado').replace(/"/g, '""')}"`,
                 `"${r.fornecedor.replace(/"/g, '""')}"`,
                 `"${formatCnpj(r.cnpj)}"`,
                 r.valor.toFixed(2).replace('.', ','),
