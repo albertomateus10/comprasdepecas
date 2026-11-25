@@ -1269,17 +1269,17 @@ tfoot tr td {
                     </div>
                 </div>
 
-                <!-- Coluna 2: Distribuição por Faixas de Valor de Nota -->
+                <!-- Coluna 2: Compras por Natureza da Operação -->
                 <div class="chart-card">
                     <div class="chart-card-header">
                         <span class="chart-card-title">
-                            <i class="fa-solid fa-layer-group" style="color: var(--purple);"></i>
-                            Distribuição das Compras por Faixa de Valor
+                            <i class="fa-solid fa-tags" style="color: #0f766e;"></i>
+                            Natureza da Operação
                         </span>
-                        <span class="chart-card-badge">Ticket</span>
+                        <span id="naturezaChartBadge" class="chart-card-badge" style="background: #f0fdfa; color: #0f766e;">Operação</span>
                     </div>
                     <div class="chart-box-side">
-                        <canvas id="faixasValorChart"></canvas>
+                        <canvas id="naturezaOperacaoChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -1524,11 +1524,12 @@ const FAIXAS_VALOR_ORDEM = [
 let allData = [];
 let filtered = [];
 let filteredNoBar = [];   // filtros ativos, exceto o clique em fornecedor (mantém o ranking visível)
+let filteredNoOp = [];    // filtros ativos (incluindo fornecedor clicado), exceto Natureza da Operação
 let charts = {
     periodo: null,
     topFornecedores: null,
     freqFornecedores: null,
-    faixasValor: null
+    naturezaOperacao: null
 };
 
 let periodoDateType = 'entrada'; // 'entrada' ou 'emissao'
@@ -1968,13 +1969,12 @@ if (clearAllBtn) {
 
 /* ===== Filtragem dos Dados ===== */
 function applyFilters() {
-    filteredNoBar = allData.filter(r => {
+    const baseWithoutOp = allData.filter(r => {
         const rowMes = (periodoDateType === 'emissao' ? r.mesEmissao : r.mesEntrada) || r.periodo;
 
         const periodoPillOk = state.Periodo.length === 0 || state.Periodo.includes(rowMes);
         const periodBarOk = !periodBarFilter || (rowMes === periodBarFilter);
 
-        const operacaoOk = state.Operacao.length === 0 || state.Operacao.includes(r.operacao);
         const fornOk = state.Fornecedor.length === 0 || state.Fornecedor.includes(r.fornecedor);
         const cnpjOk = state.CNPJ.length === 0 || state.CNPJ.includes(r.cnpj);
         const faixaOk = state.FaixaValor.length === 0 || state.FaixaValor.includes(r.faixaValor);
@@ -1991,17 +1991,25 @@ function applyFilters() {
                        (r.emissao && r.emissao.toLowerCase().includes(q));
         }
 
-        return periodoPillOk && periodBarOk && operacaoOk && fornOk && cnpjOk && faixaOk && notaOk && searchOk;
+        return periodoPillOk && periodBarOk && fornOk && cnpjOk && faixaOk && notaOk && searchOk;
     });
+
+    filteredNoBar = state.Operacao.length === 0
+        ? baseWithoutOp
+        : baseWithoutOp.filter(r => state.Operacao.includes(r.operacao));
 
     filtered = (barFilter && barFilter.label)
         ? filteredNoBar.filter(r => r.fornecedor === barFilter.label)
         : filteredNoBar;
 
+    filteredNoOp = (barFilter && barFilter.label)
+        ? baseWithoutOp.filter(r => r.fornecedor === barFilter.label)
+        : baseWithoutOp;
+
     currentPage = 1;
     renderKpiGroups();
     renderSupplierDetail();
-    renderCharts(filtered, filteredNoBar);
+    renderCharts(filtered, filteredNoBar, filteredNoOp);
     renderTableSection();
 }
 
@@ -2213,8 +2221,28 @@ function onChartBarClick(evt, elements, chartInstance) {
     }
 }
 
-/* O Chart.js só dispara onClick dentro da área do gráfico; aqui tornamos clicável também o nome (rótulo) do fornecedor */
-function bindSupplierLabelClick(canvasId, getChart) {
+function onOperacaoChartClick(evt, elements, chartInstance) {
+    const idx = resolveBarIndex(evt, elements, chartInstance);
+    if (idx < 0) return;
+    const op = chartInstance.data.labels[idx];
+    if (!op) return;
+
+    if (state.Operacao.length === 1 && state.Operacao[0] === op) {
+        state.Operacao = [];
+    } else {
+        state.Operacao = [op];
+    }
+
+    pillInstances.Operacao.render();
+    withStableScroll(() => applyFilters());
+
+    if (state.Operacao.length && !tableLoaded) {
+        toggleTableVisibility(true);
+    }
+}
+
+/* O Chart.js só dispara onClick dentro da área do gráfico; aqui tornamos clicável também o nome (rótulo) do eixo Y */
+function bindSupplierLabelClick(canvasId, getChart, clickHandler = onChartBarClick) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
     const locate = (e) => {
@@ -2231,11 +2259,12 @@ function bindSupplierLabelClick(canvasId, getChart) {
     });
     canvas.addEventListener('click', (e) => {
         const hit = locate(e);
-        if (hit) onChartBarClick({ x: hit.x, y: hit.y }, [{ index: hit.idx }], hit.chart);
+        if (hit) clickHandler({ x: hit.x, y: hit.y }, [{ index: hit.idx }], hit.chart);
     });
 }
 bindSupplierLabelClick('topFornecedoresChart', () => charts.topFornecedores);
 bindSupplierLabelClick('freqFornecedoresChart', () => charts.freqFornecedores);
+bindSupplierLabelClick('naturezaOperacaoChart', () => charts.naturezaOperacao, onOperacaoChartClick);
 
 /* ===== Painel de Dados do Fornecedor (aparece apenas após o clique) ===== */
 function escHtml(t) {
@@ -2366,11 +2395,11 @@ if (clearPeriodBarFilterBtn) {
 }
 
 /* ===== Renderização de Todos os Gráficos ===== */
-function renderCharts(rows, rankingRows = rows) {
+function renderCharts(rows, rankingRows = rows, operacaoRows = rows) {
     renderPeriodoChart(rows);
     renderMainChart(rankingRows);
     renderSideFrequencyChart(rankingRows);
-    renderFaixasValorChart(rows);
+    renderNaturezaOperacaoChart(operacaoRows);
 }
 
 /* 0. Gráfico de Compras por Período (Barras Verdes com Linha de Média) */
@@ -2757,77 +2786,117 @@ function renderSideFrequencyChart(rows) {
     });
 }
 
-/* 3. Gráfico Lado a Lado: Distribuição das Compras por Faixa de Valor */
-function renderFaixasValorChart(rows) {
-    const ctx = document.getElementById('faixasValorChart')?.getContext('2d');
+/* 3. Gráfico Lado a Lado: Compras por Natureza da Operação */
+function renderNaturezaOperacaoChart(rows) {
+    const ctx = document.getElementById('naturezaOperacaoChart')?.getContext('2d');
     if (!ctx) return;
 
     const agg = {};
-    FAIXAS_VALOR_ORDEM.forEach(f => {
-        agg[f] = { valor: 0, qtd: 0 };
-    });
+    const totalValor = rows.reduce((acc, r) => acc + r.valor, 0);
 
     rows.forEach(r => {
-        const f = r.faixaValor;
-        if (agg[f]) {
-            agg[f].valor += r.valor;
-            agg[f].qtd += 1;
+        const op = r.operacao || 'Não informado';
+        if (!agg[op]) {
+            agg[op] = { valor: 0, qtd: 0, fornecedores: new Set() };
         }
+        agg[op].valor += r.valor;
+        agg[op].qtd += 1;
+        if (r.fornecedor) agg[op].fornecedores.add(r.fornecedor);
     });
 
-    const labels = FAIXAS_VALOR_ORDEM;
-    const valorValues = labels.map(l => agg[l].valor);
+    const sorted = Object.entries(agg)
+        .sort((a, b) => b[1].valor - a[1].valor)
+        .slice(0, 15);
 
-    if (charts.faixasValor) {
-        charts.faixasValor.destroy();
+    const badge = document.getElementById('naturezaChartBadge');
+    if (badge) {
+        const totalOps = Object.keys(agg).length;
+        badge.textContent = totalOps > 0
+            ? `${NUM(totalOps)} ${totalOps === 1 ? 'operação' : 'operações'}`
+            : 'Operação';
     }
 
-    charts.faixasValor = new Chart(ctx, {
+    const labels = sorted.map(x => x[0]);
+    const valorValues = sorted.map(x => x[1].valor);
+
+    const palette = [
+        '#0f766e', '#0d9488', '#14b8a6', '#0284c7', '#2563eb',
+        '#4f46e5', '#6366f1', '#7c3aed', '#8b5cf6', '#a855f7',
+        '#0891b2', '#059669', '#10b981', '#3b82f6', '#64748b'
+    ];
+    const hasOpFilter = state.Operacao.length > 0;
+    const backgroundColors = labels.map((lbl, i) => {
+        if (hasOpFilter) {
+            return state.Operacao.includes(lbl) ? '#0f766e' : '#cbd5e1';
+        }
+        return palette[i % palette.length];
+    });
+
+    if (charts.naturezaOperacao) {
+        charts.naturezaOperacao.destroy();
+    }
+
+    charts.naturezaOperacao = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
             datasets: [{
                 label: 'Valor Total (R$)',
                 data: valorValues,
-                backgroundColor: [
-                    '#38bdf8',
-                    '#3b82f6',
-                    '#6366f1',
-                    '#8b5cf6',
-                    '#d946ef'
-                ],
-                borderRadius: 8,
-                barPercentage: 0.65
+                backgroundColor: backgroundColors,
+                borderRadius: 6,
+                barPercentage: 0.75,
+                maxBarThickness: 42
             }]
         },
         options: {
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             animation: false,
+            onClick: (evt, elements) => onOperacaoChartClick(evt, elements, charts.naturezaOperacao),
+            onHover: (evt, elements) => onChartBarHover(evt, elements, charts.naturezaOperacao),
             scales: {
-                y: {
-                    grace: '20%',
+                x: {
+                    grace: '28%',
                     grid: { color: '#f1f5f9' },
                     ticks: {
                         callback: v => formatCompactBRL(v),
                         font: { size: 11 }
                     }
                 },
-                x: {
+                y: {
                     grid: { display: false },
-                    ticks: { font: { size: 10, weight: '600' } }
+                    ticks: {
+                        font: { size: 11, weight: '600' },
+                        color: '#1e293b',
+                        callback: function(val) {
+                            const lbl = this.getLabelForValue(val) || '';
+                            return lbl.length > 26 ? lbl.slice(0, 24) + '…' : lbl;
+                        }
+                    }
                 }
             },
             plugins: {
                 legend: { display: false },
                 tooltip: {
+                    backgroundColor: '#0f172a',
+                    titleFont: { size: 13, weight: 'bold' },
+                    padding: 12,
+                    cornerRadius: 8,
                     callbacks: {
+                        title: (items) => items[0]?.label || '',
                         label: (c) => {
-                            const f = c.label;
-                            const d = agg[f] || { valor: 0, qtd: 0 };
+                            const op = c.label;
+                            const d = agg[op] || { valor: 0, qtd: 0, fornecedores: new Set() };
+                            const share = totalValor > 0 ? (d.valor / totalValor) * 100 : 0;
+                            const ticket = d.qtd ? (d.valor / d.qtd) : 0;
+                            const nForns = d.fornecedores.size;
                             return [
-                                `Montante: ${BRL(d.valor)}`,
-                                `Notas: ${NUM(d.qtd)} notas`
+                                `Valor Total: ${BRL(d.valor)} (${PCT(share)})`,
+                                `Quantidade: ${NUM(d.qtd)} ${d.qtd === 1 ? 'nota' : 'notas'}`,
+                                `Fornecedores: ${NUM(nForns)} ${nForns === 1 ? 'fornecedor' : 'fornecedores'}`,
+                                `Ticket Médio: ${BRL(ticket)}`
                             ];
                         }
                     }
@@ -2836,10 +2905,11 @@ function renderFaixasValorChart(rows) {
                     display: true,
                     align: 'end',
                     anchor: 'end',
-                    offset: 4,
-                    color: '#1e293b',
-                    font: { weight: 'bold', size: 10 },
-                    formatter: v => formatCompactBRL(v)
+                    offset: 6,
+                    clip: false,
+                    color: '#0f766e',
+                    font: { weight: '800', size: 11 },
+                    formatter: v => BRL(v)
                 }
             }
         }
@@ -2969,7 +3039,7 @@ function toggleOperacaoFilter(op) {
         set.add(op);
     }
     state.Operacao = [...set];
-    pillInstances.Operacao.sync();
+    pillInstances.Operacao.render();
     withStableScroll(() => applyFilters());
 }
 

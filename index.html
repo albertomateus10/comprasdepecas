@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Análise de Compras — Dashboard BI</title>
     <!-- Google Fonts & Font Awesome Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -21,7 +22,8 @@
                 </div>
                 <div>
                     <h1>Análise de Compras do Período</h1>
-                    <div class="header-subtitle">Dashboard BI Executivo — Aquisições, Fornecedores e Volume Financeiro</div>
+                    <div class="header-subtitle">Dashboard BI Executivo — Aquisições, Fornecedores e Volume Financeiro
+                    </div>
                 </div>
             </div>
             <div class="header-meta">
@@ -49,7 +51,8 @@
             <div class="search-box">
                 <div class="search-input-wrap">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input id="q" class="search-input" placeholder="Buscar por fornecedor, CNPJ, operação ou número da nota..." />
+                    <input id="q" class="search-input"
+                        placeholder="Buscar por fornecedor, CNPJ, operação ou número da nota..." />
                 </div>
                 <div class="file-input">
                     <button class="file-btn" type="button">
@@ -57,7 +60,8 @@
                     </button>
                     <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" />
                 </div>
-                <span id="fileName" class="file-name" title="Nenhum arquivo selecionado">Nenhum arquivo selecionado</span>
+                <span id="fileName" class="file-name" title="Nenhum arquivo selecionado">Nenhum arquivo
+                    selecionado</span>
             </div>
 
             <div class="action-buttons">
@@ -86,7 +90,8 @@
                     <span>Evolução de Compras por Período</span>
                 </div>
                 <div class="chart-toggle-group">
-                    <button id="btnPeriodoEntrada" class="chart-toggle-btn active" onclick="setPeriodoDateType('entrada')">
+                    <button id="btnPeriodoEntrada" class="chart-toggle-btn active"
+                        onclick="setPeriodoDateType('entrada')">
                         <i class="fa-solid fa-truck-ramp-box"></i> Data de Entrada
                     </button>
                     <button id="btnPeriodoEmissao" class="chart-toggle-btn" onclick="setPeriodoDateType('emissao')">
@@ -101,7 +106,8 @@
                         <i class="fa-solid fa-chart-column" style="color: #10b981;"></i>
                         <span id="periodoChartTitle">Compras por Período de Entrada (Mês)</span>
                     </span>
-                    <span id="periodoChartMediaBadge" class="chart-card-badge" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;">
+                    <span id="periodoChartMediaBadge" class="chart-card-badge"
+                        style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;">
                         Média Mensal: R$ 0,00
                     </span>
                 </div>
@@ -132,7 +138,8 @@
                 <div class="chart-card-header">
                     <span class="chart-card-title">
                         <i class="fa-solid fa-chart-bar" style="color: var(--primary);"></i>
-                        <span id="mainChartTitleText">Ranking dos 30 Maiores Fornecedores (Gráfico de Barras Horizontais)</span>
+                        <span id="mainChartTitleText">Ranking dos 30 Maiores Fornecedores (Gráfico de Barras
+                            Horizontais)</span>
                     </span>
                     <span id="mainChartTotalBadge" class="chart-card-badge">Total Filtrado: R$ 0,00</span>
                 </div>
@@ -167,17 +174,17 @@
                     </div>
                 </div>
 
-                <!-- Coluna 2: Distribuição por Faixas de Valor de Nota -->
+                <!-- Coluna 2: Compras por Natureza da Operação -->
                 <div class="chart-card">
                     <div class="chart-card-header">
                         <span class="chart-card-title">
-                            <i class="fa-solid fa-layer-group" style="color: var(--purple);"></i>
-                            Distribuição das Compras por Faixa de Valor
+                            <i class="fa-solid fa-tags" style="color: #0f766e;"></i>
+                            Natureza da Operação
                         </span>
-                        <span class="chart-card-badge">Ticket</span>
+                        <span id="naturezaChartBadge" class="chart-card-badge" style="background: #f0fdfa; color: #0f766e;">Operação</span>
                     </div>
                     <div class="chart-box-side">
-                        <canvas id="faixasValorChart"></canvas>
+                        <canvas id="naturezaOperacaoChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -189,11 +196,13 @@
                 <div class="table-toggle-title">
                     <i class="fa-solid fa-table-list"></i>
                     <span>Detalhamento das Notas Fiscais de Compra</span>
-                    <span id="periodBarFilterChip" class="bar-filter-chip" style="display: none; background: #ecfdf5; color: #065f46; border-color: #a7f3d0;"></span>
+                    <span id="periodBarFilterChip" class="bar-filter-chip"
+                        style="display: none; background: #ecfdf5; color: #065f46; border-color: #a7f3d0;"></span>
                     <span id="barFilterChip" class="bar-filter-chip" style="display: none;"></span>
                 </div>
                 <div class="table-toggle-actions">
-                    <button id="clearPeriodBarFilterBtn" class="clear-bar-btn" style="display: none; background: #fef2f2; color: #991b1b; border-color: #fca5a5;">
+                    <button id="clearPeriodBarFilterBtn" class="clear-bar-btn"
+                        style="display: none; background: #fef2f2; color: #991b1b; border-color: #fca5a5;">
                         <i class="fa-solid fa-xmark"></i> Limpar Período
                     </button>
                     <button id="clearBarFilterBtn" class="clear-bar-btn" style="display: none;">
@@ -208,7 +217,9 @@
             <div id="tablePlaceholder" class="table-placeholder">
                 <i class="fa-solid fa-cloud-arrow-up placeholder-icon"></i>
                 <h3 id="tablePlaceholderTitle">Aguardando Base de Dados</h3>
-                <p id="tablePlaceholderText">Selecione uma planilha de compras (arquivo <strong>.xls</strong>, <strong>.xlsx</strong> ou <strong>.csv</strong>) clicando no botão <strong>Selecionar arquivo</strong> acima para iniciar a análise.</p>
+                <p id="tablePlaceholderText">Selecione uma planilha de compras (arquivo <strong>.xls</strong>,
+                    <strong>.xlsx</strong> ou <strong>.csv</strong>) clicando no botão <strong>Selecionar
+                        arquivo</strong> acima para iniciar a análise.</p>
             </div>
 
             <div id="gridWrap" class="grid-wrap" style="display: none;">
@@ -230,10 +241,12 @@
                             <th class="sortable" data-key="cnpj" data-type="text" style="width: 200px;">
                                 CNPJ (Col D) <i class="fa-solid fa-sort sort"></i>
                             </th>
-                            <th class="sortable" data-key="valor" data-type="num" style="width: 180px; text-align: right;">
+                            <th class="sortable" data-key="valor" data-type="num"
+                                style="width: 180px; text-align: right;">
                                 Valor (Col F) <i class="fa-solid fa-sort sort"></i>
                             </th>
-                            <th class="sortable" data-key="share" data-type="num" style="width: 120px; text-align: right;">
+                            <th class="sortable" data-key="share" data-type="num"
+                                style="width: 120px; text-align: right;">
                                 % Total <i class="fa-solid fa-sort sort"></i>
                             </th>
                         </tr>
