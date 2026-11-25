@@ -988,6 +988,23 @@ td.cell-cnpj {
     color: #64748b;
 }
 
+td.cell-operacao {
+    font-weight: 600;
+    color: #334155;
+    font-size: 0.87rem;
+    cursor: pointer;
+}
+
+td.cell-operacao.muted {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+td.cell-operacao:hover {
+    color: var(--primary-2);
+    text-decoration: underline;
+}
+
 td.cell-data {
     font-family: monospace;
     color: #475569;
@@ -1303,8 +1320,8 @@ tfoot tr td {
                             <th class="sortable" data-key="nota" data-type="num" style="width: 140px;">
                                 Número da Nota (Col A) <i class="fa-solid fa-sort sort"></i>
                             </th>
-                            <th class="sortable" data-key="emissaoTs" data-type="num" style="width: 170px;">
-                                Emissão (Data e Hora) <i class="fa-solid fa-sort sort"></i>
+                            <th class="sortable" data-key="operacao" data-type="text" style="width: 210px;">
+                                Natureza da Operação <i class="fa-solid fa-sort sort"></i>
                             </th>
                             <th class="sortable" data-key="entradaTs" data-type="num" style="width: 170px;">
                                 Entrada (Data e Hora) <i class="fa-solid fa-sort sort"></i>
@@ -1788,7 +1805,10 @@ function parseRows(headers, data) {
         'Natureza da Operacao',
         'Natureza Operação',
         'Natureza Operacao',
-        'Natureza'
+        'Natureza',
+        'Nat. da Operação',
+        'Nat. Operação',
+        'Tipo de Operação'
     ]);
 
     const colFornecedor = (() => {
@@ -2903,15 +2923,21 @@ function renderTableSection() {
             const tr = document.createElement('tr');
             const share = totalFiltradoValor > 0 ? (r.valor / totalFiltradoValor) * 100 : 0;
 
+            const opInformada = r.operacao && r.operacao !== 'Não informado';
+
             tr.innerHTML = `
                 <td class="cell-nota">${r.nota}</td>
-                <td class="cell-data">${r.emissao || '—'}</td>
+                <td class="cell-operacao${opInformada ? '' : ' muted'}" title="Clique para filtrar por esta natureza da operação">${escHtml(r.operacao || '—')}</td>
                 <td class="cell-data">${r.entrada || '—'}</td>
                 <td class="cell-fornecedor" title="Clique para filtrar apenas este fornecedor">${r.fornecedor}</td>
                 <td class="cell-cnpj">${formatCnpj(r.cnpj)}</td>
                 <td class="cell-valor">${BRL(r.valor)}</td>
                 <td class="cell-share">${PCT(share)}</td>
             `;
+
+            tr.querySelector('.cell-operacao').addEventListener('click', () => {
+                toggleOperacaoFilter(r.operacao);
+            });
 
             tr.querySelector('.cell-fornecedor').addEventListener('click', () => {
                 toggleSupplierFilter(r.fornecedor);
@@ -2932,6 +2958,19 @@ function renderTableSection() {
     if (tfootValor) tfootValor.textContent = BRL(totalFiltradoValor);
 
     renderPagination(totalItems, totalPages);
+}
+
+function toggleOperacaoFilter(op) {
+    if (!op) return;
+    const set = new Set(state.Operacao);
+    if (set.has(op)) {
+        set.delete(op);
+    } else {
+        set.add(op);
+    }
+    state.Operacao = [...set];
+    pillInstances.Operacao.sync();
+    withStableScroll(() => applyFilters());
 }
 
 function toggleSupplierFilter(forn) {
@@ -2957,7 +2996,7 @@ document.querySelectorAll('#grid thead th.sortable').forEach(th => {
         } else {
             sortState.key = key;
             sortState.type = type;
-            sortState.dir = (key === 'valor' || key === 'share' || key === 'nota' || key === 'emissaoTs' || key === 'entradaTs') ? 'desc' : 'asc';
+            sortState.dir = (key === 'valor' || key === 'share' || key === 'nota' || key === 'entradaTs') ? 'desc' : 'asc';
         }
 
         document.querySelectorAll('#grid thead th.sortable').forEach(el => {

@@ -904,6 +904,23 @@ td.cell-cnpj {
     font-size: 0.86rem;
 }
 
+td.cell-operacao {
+    font-weight: 600;
+    color: #334155;
+    font-size: 0.87rem;
+    cursor: pointer;
+}
+
+td.cell-operacao.muted {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+td.cell-operacao:hover {
+    color: var(--primary-2);
+    text-decoration: underline;
+}
+
 td.cell-data {
     font-family: monospace;
     color: #475569;

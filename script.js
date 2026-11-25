@@ -438,7 +438,10 @@ function parseRows(headers, data) {
         'Natureza da Operacao',
         'Natureza Operação',
         'Natureza Operacao',
-        'Natureza'
+        'Natureza',
+        'Nat. da Operação',
+        'Nat. Operação',
+        'Tipo de Operação'
     ]);
 
     const colFornecedor = (() => {
@@ -614,11 +617,11 @@ function applyFilters() {
         if (state.search) {
             const q = state.search;
             searchOk = r.fornecedor.toLowerCase().includes(q) ||
-                       r.cnpj.toLowerCase().includes(q) ||
-                       r.nota.toLowerCase().includes(q) ||
-                       (r.operacao && r.operacao.toLowerCase().includes(q)) ||
-                       (r.entrada && r.entrada.toLowerCase().includes(q)) ||
-                       (r.emissao && r.emissao.toLowerCase().includes(q));
+                r.cnpj.toLowerCase().includes(q) ||
+                r.nota.toLowerCase().includes(q) ||
+                (r.operacao && r.operacao.toLowerCase().includes(q)) ||
+                (r.entrada && r.entrada.toLowerCase().includes(q)) ||
+                (r.emissao && r.emissao.toLowerCase().includes(q));
         }
 
         return periodoPillOk && periodBarOk && operacaoOk && fornOk && cnpjOk && faixaOk && notaOk && searchOk;
@@ -1251,7 +1254,7 @@ function renderMainChart(rows) {
                     ticks: {
                         font: { size: 11, weight: '700' },
                         color: '#1e293b',
-                        callback: function(val) {
+                        callback: function (val) {
                             const lbl = this.getLabelForValue(val) || '';
                             return lbl.length > 32 ? lbl.slice(0, 30) + '…' : lbl;
                         }
@@ -1352,7 +1355,7 @@ function renderSideFrequencyChart(rows) {
                     grid: { display: false },
                     ticks: {
                         font: { size: 10, weight: '600' },
-                        callback: function(val) {
+                        callback: function (val) {
                             const lbl = this.getLabelForValue(val) || '';
                             return lbl.length > 24 ? lbl.slice(0, 22) + '…' : lbl;
                         }
@@ -1553,15 +1556,21 @@ function renderTableSection() {
             const tr = document.createElement('tr');
             const share = totalFiltradoValor > 0 ? (r.valor / totalFiltradoValor) * 100 : 0;
 
+            const opInformada = r.operacao && r.operacao !== 'Não informado';
+
             tr.innerHTML = `
                 <td class="cell-nota">${r.nota}</td>
-                <td class="cell-data">${r.emissao || '—'}</td>
+                <td class="cell-operacao${opInformada ? '' : ' muted'}" title="Clique para filtrar por esta natureza da operação">${escHtml(r.operacao || '—')}</td>
                 <td class="cell-data">${r.entrada || '—'}</td>
                 <td class="cell-fornecedor" title="Clique para filtrar apenas este fornecedor">${r.fornecedor}</td>
                 <td class="cell-cnpj">${formatCnpj(r.cnpj)}</td>
                 <td class="cell-valor">${BRL(r.valor)}</td>
                 <td class="cell-share">${PCT(share)}</td>
             `;
+
+            tr.querySelector('.cell-operacao').addEventListener('click', () => {
+                toggleOperacaoFilter(r.operacao);
+            });
 
             tr.querySelector('.cell-fornecedor').addEventListener('click', () => {
                 toggleSupplierFilter(r.fornecedor);
@@ -1582,6 +1591,19 @@ function renderTableSection() {
     if (tfootValor) tfootValor.textContent = BRL(totalFiltradoValor);
 
     renderPagination(totalItems, totalPages);
+}
+
+function toggleOperacaoFilter(op) {
+    if (!op) return;
+    const set = new Set(state.Operacao);
+    if (set.has(op)) {
+        set.delete(op);
+    } else {
+        set.add(op);
+    }
+    state.Operacao = [...set];
+    pillInstances.Operacao.sync();
+    withStableScroll(() => applyFilters());
 }
 
 function toggleSupplierFilter(forn) {
@@ -1607,7 +1629,7 @@ document.querySelectorAll('#grid thead th.sortable').forEach(th => {
         } else {
             sortState.key = key;
             sortState.type = type;
-            sortState.dir = (key === 'valor' || key === 'share' || key === 'nota' || key === 'emissaoTs' || key === 'entradaTs') ? 'desc' : 'asc';
+            sortState.dir = (key === 'valor' || key === 'share' || key === 'nota' || key === 'entradaTs') ? 'desc' : 'asc';
         }
 
         document.querySelectorAll('#grid thead th.sortable').forEach(el => {
